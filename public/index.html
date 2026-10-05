@@ -4,12 +4,26 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CESGLOW | Cuidado Profesional de la Piel</title>
+    <script>try{if(localStorage.getItem("bscLang")){document.documentElement.classList.add("lang-chosen");}}catch(e){}</script>
     <link rel="stylesheet" href="css/styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
 </head>
 <body>
+    <!-- Menú de bienvenida: elegir idioma -->
+    <div class="lang-overlay" id="langOverlay" role="dialog" aria-modal="true" aria-labelledby="langTitle">
+        <div class="lang-box">
+            <span class="logo-text">CESGLOW</span>
+            <h2 class="lang-title" id="langTitle">Bienvenidos · Welcome</h2>
+            <p class="lang-subtitle">Elige tu idioma · Choose your language</p>
+            <div class="lang-buttons">
+                <button type="button" class="btn btn-primary lang-btn" data-lang="es">Página en español</button>
+                <button type="button" class="btn btn-primary lang-btn" data-lang="en">Page in English</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Navegación -->
     <nav class="navbar" id="navbar">
         <div class="nav-container">
@@ -26,6 +40,10 @@
             </ul>
             <div class="nav-auth" id="navAuth">
                 <!-- El contenido se genera dinámicamente según el estado de autenticación -->
+            </div>
+            <div class="lang-switcher" role="group" aria-label="Idioma / Language">
+                <button type="button" class="lang-switch-btn" data-lang="es">ES</button>
+                <button type="button" class="lang-switch-btn" data-lang="en">EN</button>
             </div>
             <button class="nav-toggle" id="navToggle">
                 <span></span>
@@ -57,7 +75,7 @@
         <div class="services-grid">
             <div class="service-card" onclick="abrirGaleria('corporales')" style="cursor:pointer;">
                 <h3 class="service-title">Tratamientos Corporales</h3>
-                <p class="service-description">Tratamientos corporales avanzados que sculptan, tonifican y rejuvenecen tu cuerpo utilizando las técnicas más innovadoras del mercado estético.</p>
+                <p class="service-description">Tratamientos corporales avanzados que esculpen, tonifican y rejuvenecen tu cuerpo utilizando las técnicas más innovadoras del mercado estético.</p>
                 <p style="text-align:center; margin-top:15px; font-family:'Playfair Display', serif; font-size:14px; color:#D8B4A0; font-style:italic;">Clic aquí para ver imágenes</p>
             </div>
             <div class="service-card" onclick="abrirGaleria('faciales')" style="cursor:pointer;">
@@ -372,7 +390,7 @@
                     <label class="checkbox-container">
                         <input type="checkbox" id="agreeTerms" required>
                         <span class="checkmark"></span>
-                        Acepto los <a href="/terms.html" target="_blank" style="color:#D8B4A0;">términos y condiciones</a>
+                        Acepto los <a href="#">términos y condiciones</a>
                     </label>
                 </div>
                 
@@ -506,9 +524,9 @@
 
     function abrirGaleria(tipo) {
         const data = galeriaData[tipo];
-        document.getElementById('galeriaTitulo').textContent = data.titulo;
+        document.getElementById('galeriaTitulo').textContent = t(data.titulo);
         document.getElementById('galeriaImagenes').innerHTML = data.imagenes.map(src => `
-            <img src="${src}" alt="${data.titulo}" style="width:100%; height:280px; object-fit:cover; border-radius:10px;">
+            <img src="${src}" alt="${t(data.titulo)}" style="width:100%; height:280px; object-fit:cover; border-radius:10px;">
         `).join('');
         const modal = document.getElementById('galeriaModal');
         modal.style.display = 'flex';
@@ -521,6 +539,7 @@
     }
     </script>
 
+    <script src="js/i18n.js"></script>
     <script src="js/auth.js"></script>
 </body>
 </html>
