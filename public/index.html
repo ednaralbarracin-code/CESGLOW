@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CESGLOW | Cuidado Profesional de la Piel</title>
+    <script>try{if(localStorage.getItem("bscLang")){document.documentElement.classList.add("lang-chosen");}}catch(e){}</script>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Menú de bienvenida: elegir idioma -->
+    <div class="lang-overlay" id="langOverlay" role="dialog" aria-modal="true" aria-labelledby="langTitle">
+        <div class="lang-box">
+            <span class="logo-text">CESGLOW</span>
+            <h2 class="lang-title" id="langTitle">Bienvenidos · Welcome</h2>
+            <p class="lang-subtitle">Elige tu idioma · Choose your language</p>
+            <div class="lang-buttons">
+                <button type="button" class="btn btn-primary lang-btn" data-lang="es">Página en español</button>
+                <button type="button" class="btn btn-primary lang-btn" data-lang="en">Page in English</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navegación -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <a href="#home" class="nav-logo">
+                <span class="logo-text">CESGLOW</span>
+            </a>
+            <ul class="nav-menu" id="navMenu">
+                <li><a href="#home" class="nav-link">Inicio</a></li>
+                <li><a href="#services" class="nav-link">Servicios</a></li>
+                <li><a href="#about" class="nav-link">Nosotros</a></li>
+                <li><a href="#work" class="nav-link">Trabajos</a></li>
+                <li><a href="#booking" class="nav-link">Reservas</a></li>
+                <li><a href="#contact" class="nav-link">Contacto</a></li>
+            </ul>
+            <div class="nav-auth" id="navAuth">
+                <!-- El contenido se genera dinámicamente según el estado de autenticación -->
+            </div>
+            <div class="lang-switcher" role="group" aria-label="Idioma / Language">
+                <button type="button" class="lang-switch-btn" data-lang="es">ES</button>
+                <button type="button" class="lang-switch-btn" data-lang="en">EN</button>
+            </div>
+            <button class="nav-toggle" id="navToggle">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Sección Hero -->
+    <section class="hero" id="home">
+        <div class="hero-content">
+            <h1 class="hero-title">Una Experiencia de Servicio Completa</h1>
+            <h2 class="hero-subtitle">CESGLOW</h2>
+            <p class="hero-description">Descubre una experiencia única de cuidado de la piel diseñada para realzar tu belleza natural y hacerte sentir radiante.</p>
+            <div class="hero-buttons">
+                <a href="#booking" class="btn btn-primary">Reservar Cita</a>
+                <a href="#services" class="btn btn-secondary">Ver Servicios</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Sección de Servicios -->
+    <section class="services" id="services">
+        <div class="section-header">
+            <h2 class="section-title">Nuestros Servicios</h2>
+            <p class="section-subtitle">Descubre nuestros tratamientos especializados diseñados para cuidar y rejuvenecer tu piel.</p>
+        </div>
+        <div class="services-grid">
+            <div class="service-card" onclick="abrirGaleria('corporales')" style="cursor:pointer;">
+                <h3 class="service-title">Tratamientos Corporales</h3>
+                <p class="service-description">Tratamientos corporales avanzados que esculpen, tonifican y rejuvenecen tu cuerpo utilizando las técnicas más innovadoras del mercado estético.</p>
+                <p style="text-align:center; margin-top:15px; font-family:'Playfair Display', serif; font-size:14px; color:#D8B4A0; font-style:italic;">Clic aquí para ver imágenes</p>
+            </div>
+            <div class="service-card" onclick="abrirGaleria('faciales')" style="cursor:pointer;">
+                <h3 class="service-title">Tratamientos Faciales</h3>
+                <p class="service-description">Faciales personalizados que hidratan, nutren y restauran la luminosidad natural de tu rostro. Adaptados a tus necesidades específicas de piel.</p>
+                <p style="text-align:center; margin-top:15px; font-family:'Playfair Display', serif; font-size:14px; color:#D8B4A0; font-style:italic;">Clic aquí para ver imágenes</p>
+            </div>
+            <div class="service-card" onclick="abrirGaleria('mascarillas')" style="cursor:pointer;">
+                <h3 class="service-title">Mascarillas Faciales</h3>
+                <p class="service-description">Mascarillas faciales especializadas con ingredientes premium que proporcionan beneficios intensivos para diferentes tipos y preocupaciones de la piel.</p>
+                <p style="text-align:center; margin-top:15px; font-family:'Playfair Display', serif; font-size:14px; color:#D8B4A0; font-style:italic;">Clic aquí para ver imágenes</p>
+            </div>
+        </div>
+
+        <!-- Modal Galería de Servicios -->
+        <div id="galeriaModal" style="display:none; position:fixed; inset:0; z-index:3000; align-items:center; justify-content:center;">
+            <div style="position:absolute; inset:0; background:rgba(0,0,0,0.8);" onclick="cerrarGaleria()"></div>
+            <div style="position:relative; background:white; border-radius:16px; padding:30px; width:90%; max-width:700px; z-index:1;">
+                <button onclick="cerrarGaleria()" style="position:absolute; top:15px; right:20px; background:none; border:none; font-size:28px; cursor:pointer; color:#333;">&times;</button>
+                <h3 id="galeriaTitulo" style="text-align:center; font-family:'Playfair Display', serif; margin-bottom:20px; color:#333;"></h3>
+                <div id="galeriaImagenes" style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">
+                </div>
+            </div>
+        </div>
+        <div class="services-features">
+            <div class="feature-item">
+                
+                <span class="feature-text">Resultados Visibles</span>
+            </div>
+            <div class="feature-item">
+                
+                <span class="feature-text">Productos Naturales</span>
+            </div>
+            <div class="feature-item">
+                
+                <span class="feature-text">Atención Personalizada</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Sección Acerca de -->
+    <section class="about" id="about">
+        <div class="about-content">
+            <div class="about-text">
+                <h2 class="section-title">Sobre Nosotros</h2>
+                <p class="about-description">En CESGLOW creemos que la belleza comienza con el autocuidado y el autorespeto. Somos un equipo de profesionales apasionados por la estética facial y corporal, comprometidos con proporcionar experiencias transformadoras que combinan bienestar, ciencia y elegancia.</p>
+                <p class="about-description">Cada tratamiento que ofrecemos está diseñado pensando en ti, utilizando las últimas técnicas, productos de alta calidad y un enfoque personalizado que resalta tu belleza natural y aumenta tu confianza.</p>
+                <div class="about-mission">
+                    <div class="mission-item">
+                        <h4>Nuestra Misión:</h4>
+                        <p>Inspirar confianza, armonía y empoderamiento a través del arte del cuidado estético.</p>
+                    </div>
+                    <div class="mission-item">
+                        <h4>Nuestra Visión:</h4>
+                        <p>Convertirnos en tu espacio de referencia para renovar tu cuerpo, mente y piel con resultados visibles y experiencias memorables.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="about-image">
+                <img src="images/logo.jpg" alt="CESGLOW" style="width:100%; height:100%; object-fit:cover; border-radius:var(--border-radius);">
+            </div>
+        </div>
+    </section>
+
+    <!-- Sección de Trabajos -->
+    <section class="work" id="work">
+        <div class="section-header">
+            <h2 class="section-title">Nuestro Trabajo</h2>
+            <p class="section-subtitle">Descubre algunos de nuestros tratamientos y resultados.</p>
+        </div>
+        <div class="work-grid">
+            <div class="work-item">
+                <div class="work-image">
+                    <img src="images/trabajo1.jpg" alt="Tratamiento Facial" style="width:100%; height:100%; object-fit:cover;">
+                </div>
+                <div class="work-info">
+                    <h4>Tratamiento Facial</h4>
+                    <p>Resultados Visibles</p>
+                </div>
+            </div>
+            <div class="work-item">
+                <div class="work-image">
+                    <img src="images/trabajo2.jpg" alt="Relajación" style="width:100%; height:100%; object-fit:cover;">
+                </div>
+                <div class="work-info">
+                    <h4>Relajación</h4>
+                    <p>Experiencia Única</p>
+                </div>
+            </div>
+            <div class="work-item">
+                <div class="work-image">
+                    <img src="images/trabajo3.jpg" alt="Tratamiento Corporal" style="width:100%; height:100%; object-fit:cover;">
+                </div>
+                <div class="work-info">
+                    <h4>Tratamiento Corporal</h4>
+                    <p>Resultados Excepcionales</p>
+                </div>
+            </div>
+            <div class="work-item">
+                <div class="work-image">
+                    <img src="images/trabajo4.jpg" alt="Cuidado de Belleza" style="width:100%; height:100%; object-fit:cover;">
+                </div>
+                <div class="work-info">
+                    <h4>Cuidado de Belleza</h4>
+                    <p>Confianza y Belleza</p>
+                </div>
+            </div>
+        </div>
+        <div class="why-us">
+            <h3 class="why-us-title">¿Por Qué Elegirnos?</h3>
+            <p class="why-us-subtitle">Compromiso con la excelencia y tu satisfacción.</p>
+            <div class="why-us-grid">
+                <div class="why-us-item">
+                    <span class="why-icon">🔬</span>
+                    <h4>Tecnología de Punta</h4>
+                    <p>Utilizamos el equipo más avanzado y técnicas innovadoras del mercado estético.</p>
+                </div>
+                <div class="why-us-item">
+                    <span class="why-icon">👩‍⚕️</span>
+                    <h4>Expertos Calificados</h4>
+                    <p>Nuestro equipo de profesionales altamente capacitados personaliza cada tratamiento.</p>
+                </div>
+                <div class="why-us-item">
+                    <span class="why-icon">💎</span>
+                    <h4>Resultados Visibles</h4>
+                    <p>Comprometidos a entregar resultados duraderos que realzan tu belleza natural.</p>
+                </div>
+                <div class="why-us-item">
+                    <span class="why-icon">🧘‍♀️</span>
+                    <h4>Atmósfera Relajante</h4>
+                    <p>Un espacio profesional diseñado para tu comodidad y relajación total.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Sección de Reservas -->
+    <section class="booking" id="booking">
+        <div class="section-header">
+            <h2 class="section-title">Reserva Tu Cita</h2>
+            <p class="section-subtitle">Selecciona la fecha y hora que prefieras para tu tratamiento.</p>
+        </div>
+        <div class="booking-content">
+            <div class="booking-calendar">
+                <div class="calendar-header">
+                    <h3 id="currentMonth">Enero 2025</h3>
+                    <div class="calendar-nav">
+                        <button class="calendar-btn" id="prevMonth">&lt;</button>
+                        <button class="calendar-btn" id="nextMonth">&gt;</button>
+                    </div>
+                </div>
+                <div class="calendar-grid" id="calendarGrid">
+                    <div class="calendar-day-header">Dom</div>
+                    <div class="calendar-day-header">Lun</div>
+                    <div class="calendar-day-header">Mar</div>
+                    <div class="calendar-day-header">Mié</div>
+                    <div class="calendar-day-header">Jue</div>
+                    <div class="calendar-day-header">Vie</div>
+                    <div class="calendar-day-header">Sáb</div>
+                </div>
+            </div>
+            <div class="booking-info">
+                <div id="selectedDate" class="selected-date">
+                    <p>Selecciona una fecha</p>
+                </div>
+                <div class="business-hours">
+                    <h4>🕐 Horario de Atención</h4>
+                    <ul>
+                        <li>Lun - Sáb: 9:00 AM - 5:00 PM</li>
+                        <li>Domingos: Cerrado</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Sección de Contacto -->
+    <section class="contact" id="contact">
+        <div class="section-header">
+            <h2 class="section-title">Contáctanos</h2>
+            <p class="section-subtitle">Estamos aquí para ayudarte a programar tu próxima sesión de cuidado de la piel.</p>
+        </div>
+        <div class="contact-content">
+            <div class="contact-info">
+                <div class="contact-item">
+                    <span class="contact-icon">📞</span>
+                    <div class="contact-details">
+                        <h4>Teléfono</h4>
+                        <a href="tel:714-473-9747">714-473-9747</a>
+                    </div>
+                </div>
+                <div class="contact-item">
+                    <span class="contact-icon">✉️</span>
+                    <div class="contact-details">
+                        <h4>Correo Electrónico</h4>
+                        <a href="mailto:edna.esthetician@gmail.com">edna.esthetician@gmail.com</a>
+                    </div>
+                </div>
+                <div class="contact-item">
+                    <span class="contact-icon">📍</span>
+                    <div class="contact-details">
+                        <h4>Nuestra Ubicación</h4>
+                        <a href="https://maps.app.goo.gl/oa8rPfxj1TjCNZcKA?g_st=iwb" target="_blank" style="color:inherit;">Columbia, Md.</a>
+                    </div>
+                </div>
+                <a href="tel:714-473-9747" class="btn btn-primary btn-large">Reservar Tu Cita</a>
+            </div>
+            <div class="social-media">
+                <h4>Síguenos en Redes Sociales</h4>
+                <div class="social-links">
+                    <a href="https://www.youtube.com/@CESGLOW" target="_blank" class="social-link" style="display:flex; align-items:center; gap:12px;">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="#FF0000"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+                        <span>@CESGLOW</span>
+                    </a>
+                    <a href="https://www.tiktok.com/@cesglow.beauty" target="_blank" class="social-link" style="display:flex; align-items:center; gap:12px;">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="#000000"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.75a8.27 8.27 0 0 0 4.84 1.55V6.85a4.85 4.85 0 0 1-1.07-.16z"/></svg>
+                        <span>cesglow.beauty</span>
+                    </a>
+                    <a href="https://www.instagram.com/cesglow.beauty/" target="_blank" class="social-link" style="display:flex; align-items:center; gap:12px;">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="url(#igGradient)"><defs><linearGradient id="igGradient" x1="0%" y1="100%" x2="100%" y2="0%"><stop offset="0%" style="stop-color:#f09433"/><stop offset="25%" style="stop-color:#e6683c"/><stop offset="50%" style="stop-color:#dc2743"/><stop offset="75%" style="stop-color:#cc2366"/><stop offset="100%" style="stop-color:#bc1888"/></linearGradient></defs><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+                        <span>cesglow.beauty</span>
+                    </a>
+                    <a href="https://www.facebook.com/profile.php?id=100094184564965" target="_blank" class="social-link" style="display:flex; align-items:center; gap:12px;">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="#1877F2"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                        <span>cesglow.beauty</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>&copy; 2024 CESGLOW. Todos los derechos reservados.</p>
+    </footer>
+
+    <!-- Modal de Inicio de Sesión -->
+    <div class="modal" id="loginModal">
+        <div class="modal-overlay" id="loginOverlay"></div>
+        <div class="modal-content">
+            <button class="modal-close" id="loginClose">&times;</button>
+            <div class="auth-tabs">
+                <button class="auth-tab active" data-tab="login">Iniciar Sesión</button>
+                <button class="auth-tab" data-tab="register">Registrarse</button>
+            </div>
+            
+            <!-- Formulario de Inicio de Sesión -->
+            <form id="loginForm" class="auth-form">
+                <h3 class="auth-title">Bienvenido de Nuevo</h3>
+                <p class="auth-subtitle">Ingresa tus credenciales para acceder a tu cuenta</p>
+                
+                <div class="form-group">
+                    <label for="loginEmail">Correo Electrónico</label>
+                    <input type="email" id="loginEmail" name="email" required placeholder="tu@email.com">
+                </div>
+                
+                <div class="form-group">
+                    <label for="loginPassword">Contraseña</label>
+                    <input type="password" id="loginPassword" name="password" required placeholder="••••••••">
+                </div>
+                
+                <div class="form-options">
+                    <label class="checkbox-container">
+                        <input type="checkbox" id="rememberMe">
+                        <span class="checkmark"></span>
+                        Recordarme
+                    </label>
+                </div>
+                
+                <button type="submit" class="btn btn-primary btn-full">Iniciar Sesión</button>
+                <div id="loginError" class="auth-error"></div>
+            </form>
+            
+            <!-- Formulario de Registro -->
+            <form id="registerForm" class="auth-form hidden">
+                <h3 class="auth-title">Crear Cuenta</h3>
+                <p class="auth-subtitle">Regístrate para disfrutar de nuestros servicios</p>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="regName">Nombre</label>
+                        <input type="text" id="regName" name="nombre" required placeholder="Tu nombre">
+                    </div>
+                    <div class="form-group">
+                        <label for="regLastname">Apellido</label>
+                        <input type="text" id="regLastname" name="apellido" required placeholder="Tu apellido">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="regPhone">Teléfono (WhatsApp)</label>
+                    <input type="tel" id="regPhone" name="telefono" placeholder="Ej: +1 714 555 1234" inputmode="tel" autocomplete="tel" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="regEmail">Correo Electrónico</label>
+                    <input type="email" id="regEmail" name="email" required placeholder="tu@email.com">
+                </div>
+                
+                <div class="form-group">
+                    <label for="regPassword">Contraseña</label>
+                    <input type="password" id="regPassword" name="password" required placeholder="Mínimo 6 caracteres" minlength="6">
+                </div>
+                
+                <div class="form-group">
+                    <label for="regConfirmPassword">Confirmar Contraseña</label>
+                    <input type="password" id="regConfirmPassword" name="confirmPassword" required placeholder="Repite tu contraseña">
+                </div>
+                
+                <div class="form-options">
+                    <label class="checkbox-container">
+                        <input type="checkbox" id="agreeTerms" required>
+                        <span class="checkmark"></span>
+                        Acepto los <a href="#">términos y condiciones</a>
+                    </label>
+                </div>
+                
+                <button type="submit" class="btn btn-primary btn-full">Crear Cuenta</button>
+                <div id="registerError" class="auth-error"></div>
+                <div id="registerSuccess" class="auth-success"></div>
+            </form>
+        </div>
+    </div>
+
+
+    <!-- Sección Reseñas -->
+    <section id="resenas" style="padding: 80px 0; background: #faf9f7;">
+        <div class="container">
+            <div class="section-header" style="text-align:center; margin-bottom:50px;">
+                <h2 class="section-title">Lo que dicen nuestras clientas</h2>
+                <p class="section-subtitle">Experiencias reales de personas que confían en nosotros</p>
+            </div>
+
+            <!-- Reseñas cargadas desde la base de datos -->
+            <div id="listaResenas" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:20px; margin-bottom:40px;">
+                <p style="text-align:center; color:#888; grid-column:1/-1;">Cargando reseñas...</p>
+            </div>
+
+            <!-- Botones de acción -->
+            <div style="text-align:center; margin-top:40px; display:flex; gap:15px; justify-content:center; flex-wrap:wrap;">
+                <a href="https://maps.app.goo.gl/oa8rPfxj1TjCNZcKA?g_st=iwb" target="_blank"
+                   style="display:inline-flex; align-items:center; gap:10px; background:#4285F4; color:white;
+                          padding:14px 28px; border-radius:50px; font-weight:600; text-decoration:none;
+                          box-shadow:0 4px 15px rgba(66,133,244,0.3); transition:all 0.3s;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
+                        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                    </svg>
+                    Reseñar en Google
+                </a>
+                <button id="btnDejarResena" onclick="abrirModalResena()"
+                        style="display:inline-flex; align-items:center; gap:10px; background:#D8B4A0; color:white;
+                               padding:14px 28px; border-radius:50px; font-weight:600; border:none; cursor:pointer;
+                               box-shadow:0 4px 15px rgba(216,180,160,0.3); transition:all 0.3s;">
+                    ⭐ Dejar reseña en el sitio
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Modal Reseña -->
+    <div class="modal" id="resenaModal" style="display:none; position:fixed; inset:0; z-index:2000; align-items:center; justify-content:center;">
+        <div style="position:absolute; inset:0; background:rgba(0,0,0,0.5);" onclick="cerrarModalResena()"></div>
+        <div style="position:relative; background:white; border-radius:16px; padding:40px; width:90%; max-width:480px; z-index:1;">
+            <button onclick="cerrarModalResena()" style="position:absolute; top:15px; right:20px; background:none; border:none; font-size:24px; cursor:pointer;">&times;</button>
+            <h3 style="margin-bottom:20px; text-align:center;">✍️ Deja tu reseña</h3>
+            <div id="resenaLoginMsg" style="display:none; text-align:center; padding:20px;">
+                <p>Debes iniciar sesión para dejar una reseña.</p>
+                <button onclick="cerrarModalResena(); openLoginModal();" class="btn btn-primary" style="margin-top:10px;">Iniciar Sesión</button>
+            </div>
+            <form id="formResena" style="display:none;">
+                <div style="text-align:center; margin-bottom:20px;">
+                    <p style="margin-bottom:10px; font-weight:500;">¿Cómo calificarías tu experiencia?</p>
+                    <div id="starSelector" style="font-size:36px; cursor:pointer; letter-spacing:5px;">
+                        <span class="star" data-val="1">☆</span>
+                        <span class="star" data-val="2">☆</span>
+                        <span class="star" data-val="3">☆</span>
+                        <span class="star" data-val="4">☆</span>
+                        <span class="star" data-val="5">☆</span>
+                    </div>
+                    <input type="hidden" id="calificacionInput" value="0">
+                </div>
+                <div style="margin-bottom:15px;">
+                    <label style="display:block; margin-bottom:5px; font-weight:500;">Tu comentario</label>
+                    <textarea id="comentarioResena" required placeholder="Cuéntanos tu experiencia..."
+                              style="width:100%; padding:10px; border-radius:8px; border:1px solid #ddd; resize:vertical; min-height:100px;"></textarea>
+                </div>
+                <div id="errorResena" style="display:none; color:red; margin-bottom:10px; font-size:14px;"></div>
+                <button type="submit" class="btn btn-primary" style="width:100%;">Enviar Reseña</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Panel de Usuario -->
+    <div class="user-panel" id="userPanel">
+        <div class="user-panel-content">
+            <button class="panel-close" id="panelClose">&times;</button>
+            <div class="user-header">
+                <div class="user-avatar" id="userAvatar">👤</div>
+                <h3 id="userName">Usuario</h3>
+                <p id="userEmail">email@example.com</p>
+            </div>
+            <div class="user-menu">
+                <a href="#" class="user-menu-item" id="dashboardLink">
+                    <span class="menu-icon">📋</span>
+                    <span>Mis Citas</span>
+                </a>
+                <a href="#" class="user-menu-item" id="logoutBtn">
+                    <span class="menu-icon">🚪</span>
+                    <span>Cerrar Sesión</span>
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="user-panel-overlay" id="userPanelOverlay"></div>
+
+    <!-- Modal Mis Citas -->
+    <div class="modal" id="citasModal">
+        <div class="modal-overlay" id="citasOverlay"></div>
+        <div class="modal-content">
+            <button class="modal-close" id="citasClose">&times;</button>
+            <h3 class="auth-title">📋 Mis Citas</h3>
+            <div id="listaCitas" style="margin-top:20px;"></div>
+        </div>
+    </div>
+
+    
+    <script>
+    const galeriaData = {
+        corporales: {
+            titulo: 'Tratamientos Corporales',
+            imagenes: ['images/serv_corp1.jpg', 'images/serv_corp2.jpg']
+        },
+        faciales: {
+            titulo: 'Tratamientos Faciales',
+            imagenes: ['images/serv_fac1.jpg', 'images/serv_fac2.jpg']
+        },
+        mascarillas: {
+            titulo: 'Mascarillas Faciales',
+            imagenes: ['images/serv_mask1.jpg', 'images/serv_mask2.jpg']
+        }
+    };
+
+    function abrirGaleria(tipo) {
+        const data = galeriaData[tipo];
+        document.getElementById('galeriaTitulo').textContent = t(data.titulo);
+        document.getElementById('galeriaImagenes').innerHTML = data.imagenes.map(src => `
+            <img src="${src}" alt="${t(data.titulo)}" style="width:100%; height:280px; object-fit:cover; border-radius:10px;">
+        `).join('');
+        const modal = document.getElementById('galeriaModal');
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+
+    function cerrarGaleria() {
+        document.getElementById('galeriaModal').style.display = 'none';
+        document.body.style.overflow = '';
+    }
+    </script>
+
+    <script src="js/i18n.js"></script>
+    <script src="js/auth.js"></script>
+</body>
+</html>
