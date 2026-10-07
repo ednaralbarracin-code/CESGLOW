@@ -7,15 +7,9 @@
     --accent-color: #B8D4E3;
     --text-dark: #333333;
     --text-light: #666666;
-    --text-muted: #767676;          /* antes #999999 (poco contraste) */
+    --text-muted: #999999;
     --background-light: #FAFAFA;
-    --background-cream: #FAF2EC;    /* crema un poco más marcado */
-    --background-soft: #FFFBF8;     /* reemplaza el blanco puro en secciones grandes */
-    --nav-bg: rgba(255, 255, 255, 0.95);
-    --nav-bg-scrolled: rgba(255, 255, 255, 0.98);
-    --border-soft: #eeeeee;         /* bordes suaves (tema claro) */
-    --primary-tint: #fff5f0;        /* fondo de servicio seleccionado */
-    --text-accent: #9C6650;         /* rosa oscuro para TEXTOS (contraste 4.7:1) */
+    --background-cream: #FDF8F5;
     --white: #FFFFFF;
     --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.08);
     --shadow-medium: 0 8px 30px rgba(0, 0, 0, 0.12);
@@ -91,7 +85,7 @@ img {
 
 .btn-secondary {
     background: transparent;
-    color: var(--text-accent);
+    color: var(--primary-color);
     border: 2px solid var(--primary-color);
 }
 
@@ -110,17 +104,21 @@ img {
 }
 
 /* Navegación */
-.navbar.scrolled { background: var(--nav-bg-scrolled); box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); }
 .navbar {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
     z-index: 1000;
-    background: var(--nav-bg);
+    background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(10px);
     box-shadow: var(--shadow-soft);
     transition: var(--transition-smooth);
+}
+
+.navbar.scrolled {
+    box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+    opacity: 1;
 }
 
 .nav-container {
@@ -141,7 +139,7 @@ img {
     font-family: 'Playfair Display', serif;
     font-size: 28px;
     font-weight: 700;
-    color: var(--text-accent);
+    color: var(--primary-dark);
     letter-spacing: 2px;
 }
 
@@ -181,7 +179,7 @@ img {
 }
 
 .nav-link:hover {
-    color: var(--text-accent);
+    color: var(--primary-color);
 }
 
 .nav-auth {
@@ -218,7 +216,7 @@ img {
 
 .auth-btn-login {
     background: transparent;
-    color: var(--text-accent);
+    color: var(--primary-dark);
     border: 1px solid var(--primary-color);
 }
 
@@ -308,7 +306,7 @@ img {
 
 .hero-subtitle {
     font-size: 28px;
-    color: var(--text-accent);
+    color: var(--primary-dark);
     margin-bottom: 25px;
     font-weight: 500;
     animation: fadeInUp 1s ease 0.2s both;
@@ -379,7 +377,7 @@ section {
 
 /* Services Section */
 .services {
-    background: var(--background-soft);
+    background: var(--white);
 }
 
 .services-grid {
@@ -489,7 +487,7 @@ section {
 
 .mission-item h4 {
     font-size: 16px;
-    color: var(--text-accent);
+    color: var(--primary-dark);
     margin-bottom: 8px;
     font-family: 'Poppins', sans-serif;
 }
@@ -521,7 +519,7 @@ section {
 
 /* Work Section */
 .work {
-    background: var(--background-soft);
+    background: var(--white);
 }
 
 .work-grid {
@@ -685,7 +683,7 @@ section {
     border-radius: 50%;
     cursor: pointer;
     font-size: 16px;
-    color: var(--text-accent);
+    color: var(--primary-dark);
     transition: var(--transition-fast);
 }
 
@@ -758,7 +756,7 @@ section {
 .selected-date .date-display {
     font-size: 24px;
     font-weight: 600;
-    color: var(--text-accent);
+    color: var(--primary-dark);
     margin-top: 10px;
 }
 
@@ -792,7 +790,7 @@ section {
 
 /* Contact Section */
 .contact {
-    background: var(--background-soft);
+    background: var(--white);
 }
 
 .contact-content {
@@ -842,7 +840,7 @@ section {
 
 .location-name {
     font-weight: 500;
-    color: var(--text-accent) !important;
+    color: var(--primary-dark) !important;
 }
 
 .social-media {
@@ -983,7 +981,7 @@ section {
 }
 
 .auth-tab.active {
-    color: var(--text-accent);
+    color: var(--primary-dark);
 }
 
 .auth-tab.active::after {
@@ -997,7 +995,7 @@ section {
 }
 
 .auth-tab:hover {
-    color: var(--text-accent);
+    color: var(--primary-color);
 }
 
 /* Auth Forms */
@@ -1097,7 +1095,7 @@ section {
 }
 
 .checkbox-container a {
-    color: var(--text-accent);
+    color: var(--primary-color);
 }
 
 .forgot-password {
@@ -1415,7 +1413,7 @@ section {
 .lang-switch-btn {
     padding: 5px 12px;
     font: 500 12px 'Poppins', sans-serif;
-    color: var(--text-accent);
+    color: var(--primary-dark);
     background: transparent;
     border: none;
     cursor: pointer;
@@ -1424,77 +1422,5 @@ section {
 .lang-switch-btn.active { background: var(--primary-color); color: var(--white); }
 
 @media (max-width: 768px) {
-    .lang-switcher { margin-left: 8px; margin-right: 12px; }
-}
-
-
-/* ===== Cuenta en celular ===== */
-.auth-btn-icon { display: none; }
-.nav-menu-auth { display: none; }
-
-@media (max-width: 768px) {
-    .nav-auth { display: flex; gap: 8px; margin-left: auto; }   /* empuja cuenta + idioma + menú a la derecha */
-    .auth-btn-register { display: none; }          /* el modal ya trae la pestaña "Registrarse" */
-    .auth-btn-login { padding: 8px 14px; font-size: 12px; white-space: nowrap; }
-    .user-name-display { display: none; }          /* solo el círculo con la inicial */
-    .user-menu-btn { padding: 4px; }
-    .nav-menu-auth { display: block; border-top: 1px solid var(--primary-light); padding-top: 12px; }
-}
-
-@media (max-width: 480px) {
-    .auth-btn-login {
-        width: 36px; height: 36px; padding: 0; border-radius: 50%;
-        display: flex; align-items: center; justify-content: center;
-    }
-    .auth-btn-text { display: none; }
-    .auth-btn-icon { display: inline; font-size: 16px; }
-    .lang-switch-btn { padding: 4px 9px; }
-    .lang-switcher { margin-right: 8px; }
-}
-
-
-/* =====================================================
-   TEMA OSCURO  (se activa con <html data-theme="dark">)
-   Para volver al tema claro, quita ese atributo del <html>.
-   ===================================================== */
-html[data-theme="dark"] {
-    color-scheme: dark;
-    --background-light: #242020;     /* fondo principal */
-    --background-soft: #242020;
-    --background-cream: #2C2727;     /* secciones alternas y tarjetas internas */
-    --white: #352F2F;                /* superficies: tarjetas, modales, paneles */
-    --text-dark: #EFE7E2;            /* texto principal */
-    --text-light: #CFC5BF;
-    --text-muted: #A39A95;
-    --text-accent: #E3BBA8;          /* durazno claro para títulos y enlaces */
-    --primary-light: #4A3E3A;
-    --nav-bg: rgba(36, 32, 32, 0.95);
-    --nav-bg-scrolled: rgba(36, 32, 32, 0.98);
-    --border-soft: rgba(255, 255, 255, 0.12);
-    --primary-tint: #3D312D;
-    --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.35);
-    --shadow-medium: 0 8px 30px rgba(0, 0, 0, 0.45);
-    --shadow-strong: 0 12px 40px rgba(0, 0, 0, 0.55);
-}
-html[data-theme="dark"] .footer { background: #1B1818; color: var(--text-light); }
-html[data-theme="dark"] .footer p,
-html[data-theme="dark"] .footer a { color: var(--text-light); }
-html[data-theme="dark"] .work-info { color: #fff; }
-html[data-theme="dark"] .auth-error { background: #4a2222; color: #fca5a5; }
-html[data-theme="dark"] .auth-success { background: #173a26; color: #86efac; }
-html[data-theme="dark"] input,
-html[data-theme="dark"] textarea,
-html[data-theme="dark"] select {
-    background: var(--background-cream);
-    color: var(--text-dark);
-    border-color: rgba(227, 187, 168, 0.28);
-}
-html[data-theme="dark"] input::placeholder,
-html[data-theme="dark"] textarea::placeholder { color: var(--text-muted); }
-html[data-theme="dark"] .nav-toggle,
-html[data-theme="dark"] .user-menu-btn { border: none; }
-html[data-theme="dark"] .nav-toggle { background: transparent; }
-
-@media (max-width: 480px) {
-    .nav-logo .logo-text { font-size: 23px; letter-spacing: 1px; }   /* da espacio a los botones en celular */
+    .lang-switcher { margin-left: auto; margin-right: 14px; }
 }
