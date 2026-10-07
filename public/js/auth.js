@@ -264,7 +264,7 @@ function mostrarFormularioCita(date) {
                             padding:10px 12px; margin-bottom:6px; border-radius:8px;
                             border:1px solid #eee; cursor:pointer; transition:all 0.2s;
                             background:#242020;">
-                    <span style="font-size:14px;">${t(s.nombre)}${s.descripcion ? '<br><small style=color:#999>' + t(s.descripcion) + '</small>' : ''}</span>
+                    <span style="font-size:14px;">${t(s.nombre)}${s.descripcion ? '<br><small style=color:#CFCFCF>' + t(s.descripcion) + '</small>' : ''}</span>
                     <span style="font-weight:600; color:#D8B4A0; font-size:14px; white-space:nowrap; margin-left:10px;">
                         $${s.precio_max ? s.precio + ' - $' + s.precio_max : s.precio}
                     </span>
@@ -350,7 +350,7 @@ async function mostrarMisCitas(e) {
         const citas = await response.json();
 
         if (citas.length === 0) {
-            listaCitas.innerHTML = '<p style="text-align:center; color:#888;">' + t('No tienes citas agendadas aún.') + '</p>';
+            listaCitas.innerHTML = '<p style="text-align:center; color:#CFCFCF;">' + t('No tienes citas agendadas aún.') + '</p>';
             return;
         }
 
@@ -363,12 +363,12 @@ async function mostrarMisCitas(e) {
                 <div style="border:1px solid #eee; border-radius:8px; padding:15px; margin-bottom:12px;">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
                         <strong>${t(c.servicio_nombre)}</strong>
-                        <span style="background:${colorEstado[c.estado] || '#888'}; color:#242020; padding:3px 10px; border-radius:20px; font-size:12px;">${t(c.estado)}</span>
+                        <span style="background:${colorEstado[c.estado] || '#888'}; color:#FFFFFF; padding:3px 10px; border-radius:20px; font-size:12px;">${t(c.estado)}</span>
                     </div>
-                    <p style="margin:4px 0; font-size:14px; color:#555;">📅 ${fecha}</p>
-                    <p style="margin:4px 0; font-size:14px; color:#555;">⏱ ${c.duracion_minutos} ${t('min')}</p>
-                    ${c.notas ? `<p style="margin:4px 0; font-size:14px; color:#555;">📝 ${c.notas}</p>` : ''}
-                    ${c.estado === 'pendiente' ? `<button onclick="cancelarCita(${c.id_cita}, this)" style="margin-top:8px; padding:5px 12px; background:#ef4444; color:#242020; border:none; border-radius:6px; cursor:pointer; font-size:13px;">${t('Cancelar cita')}</button>` : ''}
+                    <p style="margin:4px 0; font-size:14px; color:#FFFFFF;">📅 ${fecha}</p>
+                    <p style="margin:4px 0; font-size:14px; color:#FFFFFF;">⏱ ${c.duracion_minutos} ${t('min')}</p>
+                    ${c.notas ? `<p style="margin:4px 0; font-size:14px; color:#FFFFFF;">📝 ${c.notas}</p>` : ''}
+                    ${c.estado === 'pendiente' ? `<button onclick="cancelarCita(${c.id_cita}, this)" style="margin-top:8px; padding:5px 12px; background:#ef4444; color:#FFFFFF; border:none; border-radius:6px; cursor:pointer; font-size:13px;">${t('Cancelar cita')}</button>` : ''}
                 </div>
             `;
         }).join('');
@@ -411,7 +411,7 @@ function showNotification(message, type = 'info') {
     notification.style.cssText = `
         position: fixed; top: 100px; right: 20px; padding: 15px 25px;
         background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6'};
-        color:#242020; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        color:#FFFFFF; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);
         z-index: 3000; animation: slideIn 0.3s ease;
     `;
     document.body.appendChild(notification);
@@ -513,7 +513,7 @@ async function cargarResenas() {
         resenasCache = await response.json();
         renderResenas();
     } catch (error) {
-        lista.innerHTML = '<p style="text-align:center; color:#888; grid-column:1/-1;">' + t('No se pudieron cargar las reseñas.') + '</p>';
+        lista.innerHTML = '<p style="text-align:center; color:#CFCFCF; grid-column:1/-1;">' + t('No se pudieron cargar las reseñas.') + '</p>';
     }
 }
 
@@ -523,7 +523,7 @@ function renderResenas() {
     if (!lista || !resenas) return;
     {
         if (resenas.length === 0) {
-            lista.innerHTML = '<p style="text-align:center; color:#888; grid-column:1/-1;">' + t('Sé la primera en dejar una reseña ⭐') + '</p>';
+            lista.innerHTML = '<p style="text-align:center; color:#CFCFCF; grid-column:1/-1;">' + t('Sé la primera en dejar una reseña ⭐') + '</p>';
             return;
         }
         lista.innerHTML = resenas.map(r => {
@@ -532,14 +532,14 @@ function renderResenas() {
             return `
                 <div style="background:#242020; border-radius:12px; padding:25px; box-shadow:0 2px 15px rgba(0,0,0,0.07);">
                     <div style="color:#f59e0b; font-size:20px; margin-bottom:10px;">${estrellas}</div>
-                    <p style="color:#444; font-style:italic; margin-bottom:15px;">"${r.comentario}"</p>
+                    <p style="color:#FFFFFF; font-style:italic; margin-bottom:15px;">"${r.comentario}"</p>
                     <div style="display:flex; align-items:center; gap:10px;">
-                        <div style="width:36px; height:36px; background:#D8B4A0; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#242020; font-weight:bold;">
+                        <div style="width:36px; height:36px; background:#D8B4A0; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#FFFFFF; font-weight:bold;">
                             ${r.nombre.charAt(0).toUpperCase()}
                         </div>
                         <div>
                             <p style="font-weight:600; margin:0;">${r.nombre} ${r.apellido || ''}</p>
-                            <p style="font-size:12px; color:#888; margin:0;">${fecha}</p>
+                            <p style="font-size:12px; color:#CFCFCF; margin:0;">${fecha}</p>
                         </div>
                     </div>
                 </div>
