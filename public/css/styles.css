@@ -5,9 +5,9 @@
     --primary-light: #E8C8B8;
     --secondary-color: #FFB7B2;
     --accent-color: #B8D4E3;
-    --text-dark: #333333;
-    --text-light: #666666;
-    --text-muted: #999999;
+    --text-dark: #FFFFFF;
+    --text-light: #F0F0F0;
+    --text-muted: #CFCFCF;
     --background-light: #242020;
     --background-cream: #242020;
     --white: #242020;
@@ -74,7 +74,7 @@ img {
 
 .btn-primary {
     background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
-    color: var(--white);
+    color: #FFFFFF;
     box-shadow: 0 4px 15px rgba(216, 180, 160, 0.4);
 }
 
@@ -91,7 +91,7 @@ img {
 
 .btn-secondary:hover {
     background: var(--primary-color);
-    color: var(--white);
+    color: #FFFFFF;
 }
 
 .btn-full {
@@ -222,12 +222,12 @@ img {
 
 .auth-btn-login:hover {
     background: var(--primary-color);
-    color: var(--white);
+    color: #FFFFFF;
 }
 
 .auth-btn-register {
     background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
-    color: var(--white);
+    color: #FFFFFF;
     box-shadow: 0 4px 15px rgba(216, 180, 160, 0.3);
 }
 
@@ -512,7 +512,7 @@ section {
     align-items: center;
     justify-content: center;
     font-size: 24px;
-    color: var(--white);
+    color: #FFFFFF;
     font-family: 'Playfair Display', serif;
     box-shadow: var(--shadow-medium);
 }
@@ -571,7 +571,7 @@ section {
     right: 0;
     padding: 25px;
     background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
-    color: var(--white);
+    color: #FFFFFF;
 }
 
 .work-info h4 {
@@ -689,7 +689,7 @@ section {
 
 .calendar-btn:hover {
     background: var(--primary-color);
-    color: var(--white);
+    color: #FFFFFF;
 }
 
 .calendar-grid {
@@ -721,12 +721,12 @@ section {
 
 .calendar-day.today {
     background: var(--primary-color);
-    color: var(--white);
+    color: #FFFFFF;
 }
 
 .calendar-day.selected {
     background: var(--primary-dark);
-    color: var(--white);
+    color: #FFFFFF;
 }
 
 .calendar-day.disabled {
@@ -876,14 +876,14 @@ section {
 
 .social-link:hover {
     background: var(--primary-color);
-    color: var(--white);
+    color: #FFFFFF;
     transform: translateX(5px);
 }
 
 /* Footer */
 .footer {
-    background: var(--text-dark);
-    color: var(--white);
+    background: #1A1717;
+    color: #FFFFFF;
     text-align: center;
     padding: 30px;
     font-size: 14px;
@@ -1419,8 +1419,19 @@ section {
     cursor: pointer;
     transition: var(--transition-fast);
 }
-.lang-switch-btn.active { background: var(--primary-color); color: var(--white); }
+.lang-switch-btn.active { background: var(--primary-color); color: #FFFFFF; }
 
 @media (max-width: 768px) {
     .lang-switcher { margin-left: auto; margin-right: 14px; }
+}
+
+
+/* ===== Campos de formulario en modo oscuro ===== */
+input, select, textarea {
+    background-color: #242020;
+    color: #FFFFFF;
+}
+select option {
+    background-color: #242020;
+    color: #FFFFFF;
 }
