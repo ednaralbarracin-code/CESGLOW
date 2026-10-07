@@ -1,6 +1,10 @@
 const jwt = require('jsonwebtoken');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'beauty-care-secret-key-2024';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  console.error('⚠️  ADVERTENCIA: JWT_SECRET no está configurado en las variables de entorno.');
+  process.exit(1); // El servidor no arranca sin esta variable
+}
 
 // Verificar token JWT
 function authenticateToken(req, res, next) {
