@@ -263,7 +263,7 @@ function mostrarFormularioCita(date) {
                      style="display:flex; justify-content:space-between; align-items:center;
                             padding:10px 12px; margin-bottom:6px; border-radius:8px;
                             border:1px solid #eee; cursor:pointer; transition:all 0.2s;
-                            background:white;">
+                            background:#242020;">
                     <span style="font-size:14px;">${t(s.nombre)}${s.descripcion ? '<br><small style=color:#999>' + t(s.descripcion) + '</small>' : ''}</span>
                     <span style="font-weight:600; color:#D8B4A0; font-size:14px; white-space:nowrap; margin-left:10px;">
                         $${s.precio_max ? s.precio + ' - $' + s.precio_max : s.precio}
@@ -308,7 +308,7 @@ function mostrarFormularioCita(date) {
 function seleccionarServicio(id, el) {
     // Deseleccionar todos
     document.querySelectorAll('[data-id]').forEach(item => {
-        item.style.background = 'white';
+        item.style.background = '#242020';
         item.style.borderColor = '#eee';
     });
     // Seleccionar el clickeado
@@ -363,12 +363,12 @@ async function mostrarMisCitas(e) {
                 <div style="border:1px solid #eee; border-radius:8px; padding:15px; margin-bottom:12px;">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
                         <strong>${t(c.servicio_nombre)}</strong>
-                        <span style="background:${colorEstado[c.estado] || '#888'}; color:white; padding:3px 10px; border-radius:20px; font-size:12px;">${t(c.estado)}</span>
+                        <span style="background:${colorEstado[c.estado] || '#888'}; color:#242020; padding:3px 10px; border-radius:20px; font-size:12px;">${t(c.estado)}</span>
                     </div>
                     <p style="margin:4px 0; font-size:14px; color:#555;">📅 ${fecha}</p>
                     <p style="margin:4px 0; font-size:14px; color:#555;">⏱ ${c.duracion_minutos} ${t('min')}</p>
                     ${c.notas ? `<p style="margin:4px 0; font-size:14px; color:#555;">📝 ${c.notas}</p>` : ''}
-                    ${c.estado === 'pendiente' ? `<button onclick="cancelarCita(${c.id_cita}, this)" style="margin-top:8px; padding:5px 12px; background:#ef4444; color:white; border:none; border-radius:6px; cursor:pointer; font-size:13px;">${t('Cancelar cita')}</button>` : ''}
+                    ${c.estado === 'pendiente' ? `<button onclick="cancelarCita(${c.id_cita}, this)" style="margin-top:8px; padding:5px 12px; background:#ef4444; color:#242020; border:none; border-radius:6px; cursor:pointer; font-size:13px;">${t('Cancelar cita')}</button>` : ''}
                 </div>
             `;
         }).join('');
@@ -411,7 +411,7 @@ function showNotification(message, type = 'info') {
     notification.style.cssText = `
         position: fixed; top: 100px; right: 20px; padding: 15px 25px;
         background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6'};
-        color: white; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        color:#242020; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);
         z-index: 3000; animation: slideIn 0.3s ease;
     `;
     document.body.appendChild(notification);
@@ -530,11 +530,11 @@ function renderResenas() {
             const estrellas = '★'.repeat(r.calificacion) + '☆'.repeat(5 - r.calificacion);
             const fecha = new Date(r.fecha_creacion).toLocaleDateString(getLocale(), { year: 'numeric', month: 'long', day: 'numeric' });
             return `
-                <div style="background:white; border-radius:12px; padding:25px; box-shadow:0 2px 15px rgba(0,0,0,0.07);">
+                <div style="background:#242020; border-radius:12px; padding:25px; box-shadow:0 2px 15px rgba(0,0,0,0.07);">
                     <div style="color:#f59e0b; font-size:20px; margin-bottom:10px;">${estrellas}</div>
                     <p style="color:#444; font-style:italic; margin-bottom:15px;">"${r.comentario}"</p>
                     <div style="display:flex; align-items:center; gap:10px;">
-                        <div style="width:36px; height:36px; background:#D8B4A0; border-radius:50%; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold;">
+                        <div style="width:36px; height:36px; background:#D8B4A0; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#242020; font-weight:bold;">
                             ${r.nombre.charAt(0).toUpperCase()}
                         </div>
                         <div>
