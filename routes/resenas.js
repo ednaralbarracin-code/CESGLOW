@@ -46,6 +46,36 @@ router.get('/', (req, res) => {
   }
 });
 
+// Ver mi propia reseña (requiere login)
+router.get('/mia', verificarToken, (req, res) => {
+  try {
+    const id_usuario = req.user.id || req.user.id_usuario;
+    const mia = db.prepare(`
+      SELECT id_resena, calificacion, comentario, estado, fecha_creacion
+      FROM resenas WHERE id_usuario = ?
+    `).get(id_usuario);
+    if (!mia) return res.status(404).json({ error: 'Aún no tienes una reseña' });
+    res.json(mia);
+  } catch (error) {
+    res.status(500).json({ error: 'Error al obtener tu reseña' });
+  }
+});
+
+// Borrar mi propia reseña (requiere login; cada persona solo puede borrar la suya)
+router.delete('/mia', verificarToken, (req, res) => {
+  try {
+    const id_usuario = req.user.id || req.user.id_usuario;
+    if (!id_usuario) return res.status(403).json({ error: 'Token inválido' });
+    const resultado = db.prepare('DELETE FROM resenas WHERE id_usuario = ?').run(id_usuario);
+    if (resultado.changes === 0) {
+      return res.status(404).json({ error: 'No tienes una reseña para borrar' });
+    }
+    res.json({ message: 'Reseña eliminada' });
+  } catch (error) {
+    res.status(500).json({ error: 'Error al borrar la reseña' });
+  }
+});
+
 // Enviar reseña (requiere login)
 router.post('/', verificarToken, (req, res) => {
   try {
