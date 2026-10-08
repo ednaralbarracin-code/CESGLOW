@@ -445,11 +445,18 @@
     <div class="modal" id="resenaModal" style="display:none; position:fixed; inset:0; z-index:2000; align-items:center; justify-content:center;">
         <div style="position:absolute; inset:0; background:rgba(0,0,0,0.5);" onclick="cerrarModalResena()"></div>
         <div style="position:relative; background:var(--white); border-radius:16px; padding:40px; width:90%; max-width:480px; z-index:1;">
-            <button onclick="cerrarModalResena()" style="position:absolute; top:15px; right:20px; background:none; border:none; font-size:24px; cursor:pointer;">&times;</button>
+            <button onclick="cerrarModalResena()" style="position:absolute; top:15px; right:20px; background:none; border:none; font-size:24px; cursor:pointer; color:#FFFFFF;">&times;</button>
             <h3 style="margin-bottom:20px; text-align:center;">✍️ Deja tu reseña</h3>
             <div id="resenaLoginMsg" style="display:none; text-align:center; padding:20px;">
                 <p>Debes iniciar sesión para dejar una reseña.</p>
                 <button onclick="cerrarModalResena(); openLoginModal();" class="btn btn-primary" style="margin-top:10px;">Iniciar Sesión</button>
+            </div>
+            <div id="resenaMia" style="display:none; text-align:center;">
+                <p style="margin-bottom:10px;">Ya dejaste una reseña:</p>
+                <div id="resenaMiaEstrellas" style="color:#f59e0b; font-size:26px; margin-bottom:8px;"></div>
+                <p id="resenaMiaComentario" style="font-style:italic; margin-bottom:20px; word-break:break-word;"></p>
+                <div id="errorResenaMia" style="display:none; color:#FF8A8A; margin-bottom:10px; font-size:14px;"></div>
+                <button type="button" id="btnBorrarResena" class="btn btn-primary" style="width:100%;">Borrar mi reseña</button>
             </div>
             <form id="formResena" style="display:none;">
                 <div style="text-align:center; margin-bottom:20px;">
