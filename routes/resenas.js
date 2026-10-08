@@ -52,6 +52,15 @@ router.post('/', verificarToken, (req, res) => {
     const { calificacion, comentario } = req.body;
     const id_usuario = req.user.id || req.user.id_usuario;
 
+    // Solo las cuentas activas (que siguen existiendo en la base de datos) pueden dejar reseñas.
+    // Así una sesión vieja de una cuenta borrada ya no sirve para publicar.
+    const cuenta = id_usuario
+      ? db.prepare('SELECT id_usuario FROM usuarios WHERE id_usuario = ?').get(id_usuario)
+      : null;
+    if (!cuenta) {
+      return res.status(403).json({ error: 'Tu cuenta no está activa. Inicia sesión con una cuenta válida.' });
+    }
+
     if (!calificacion || !comentario) {
       return res.status(400).json({ error: 'Calificación y comentario son obligatorios' });
     }
