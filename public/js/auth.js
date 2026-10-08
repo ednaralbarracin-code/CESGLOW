@@ -29,6 +29,8 @@ document.addEventListener('DOMContentLoaded', () => {
     cargarResenas();
     const formResena = document.getElementById('formResena');
     if (formResena) formResena.addEventListener('submit', enviarResena);
+    const btnBorrarResena = document.getElementById('btnBorrarResena');
+    if (btnBorrarResena) btnBorrarResena.addEventListener('click', pedirConfirmacionBorrarResena);
 });
 
 async function cargarServicios() {
@@ -576,18 +578,100 @@ function renderResenas() {
     }
 }
 
-function abrirModalResena() {
+async function abrirModalResena() {
     const modal = document.getElementById('resenaModal');
     modal.style.display = 'flex';
     modal.style.opacity = '1';   // la clase .modal parte con opacity:0; sin esto el pop-up queda invisible
     document.body.style.overflow = 'hidden';
-    if (currentUser) {
-        document.getElementById('formResena').style.display = 'block';
-        document.getElementById('resenaLoginMsg').style.display = 'none';
-        initStars();
+    const form = document.getElementById('formResena');
+    const loginMsg = document.getElementById('resenaLoginMsg');
+    const mia = document.getElementById('resenaMia');
+    form.style.display = 'none';
+    mia.style.display = 'none';
+    if (!currentUser) {
+        loginMsg.style.display = 'block';
+        return;
+    }
+    loginMsg.style.display = 'none';
+    const miResena = await obtenerMiResena();
+    if (modal.style.display === 'none') return;   // lo cerraron mientras cargaba
+    if (miResena) {
+        mostrarMiResena(miResena);
     } else {
-        document.getElementById('formResena').style.display = 'none';
-        document.getElementById('resenaLoginMsg').style.display = 'block';
+        form.style.display = 'block';
+        initStars();
+    }
+}
+
+// Devuelve la reseña de la persona con sesión iniciada, o null si todavía no tiene
+async function obtenerMiResena() {
+    try {
+        const response = await fetch(`${BACKEND_URL}/api/resenas/mia`, {
+            headers: { 'Authorization': `Bearer ${getToken()}` }
+        });
+        return response.ok ? await response.json() : null;
+    } catch (error) {
+        return null;   // si no hay conexión se muestra el formulario; el servidor igual evita duplicados
+    }
+}
+
+function mostrarMiResena(r) {
+    document.getElementById('resenaMiaEstrellas').textContent = '★'.repeat(r.calificacion) + '☆'.repeat(5 - r.calificacion);
+    document.getElementById('resenaMiaComentario').innerHTML = `"${r.comentario}"`;   // el servidor ya lo guarda escapado
+    document.getElementById('errorResenaMia').style.display = 'none';
+    document.getElementById('resenaMia').style.display = 'block';
+}
+
+function pedirConfirmacionBorrarResena() {
+    const previo = document.getElementById('resenaConfirmPopup');
+    if (previo) previo.remove();
+    const popup = document.createElement('div');
+    popup.id = 'resenaConfirmPopup';
+    popup.className = 'wa-popup';
+    popup.innerHTML = `
+        <div class="wa-popup-box" role="dialog" aria-modal="true">
+            <h3 class="wa-popup-title">${t('Borrar reseña')}</h3>
+            <p class="wa-popup-msg">${t('¿Seguro que quieres borrar tu reseña? Esta acción no se puede deshacer.')}</p>
+            <button id="resenaConfirmSi" class="btn btn-primary btn-full">${t('Sí, borrar')}</button>
+            <button id="resenaConfirmNo" class="wa-popup-cancel">${t('Cancelar')}</button>
+        </div>
+    `;
+    document.body.appendChild(popup);
+    document.getElementById('resenaConfirmNo').addEventListener('click', () => popup.remove());
+    document.getElementById('resenaConfirmSi').addEventListener('click', () => {
+        popup.remove();
+        borrarMiResena();
+    });
+}
+
+async function borrarMiResena() {
+    const errorDiv = document.getElementById('errorResenaMia');
+    const btn = document.getElementById('btnBorrarResena');
+    errorDiv.style.display = 'none';
+    btn.disabled = true;
+    try {
+        const response = await fetch(`${BACKEND_URL}/api/resenas/mia`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${getToken()}` }
+        });
+        const data = await response.json().catch(() => ({}));
+        if (response.ok) {
+            cerrarModalResena();
+            showNotification(t('Tu reseña fue eliminada'), 'info');
+            cargarResenas();
+        } else {
+            const sesionInvalida = (response.status === 401 || response.status === 403) &&
+                (data.error === 'No autorizado' || data.error === 'Token inválido');
+            errorDiv.textContent = sesionInvalida
+                ? t('Tu sesión expiró. Inicia sesión de nuevo.')
+                : t(data.error || 'Error al borrar la reseña');
+            errorDiv.style.display = 'block';
+        }
+    } catch (error) {
+        errorDiv.textContent = t('Error de conexión. Intenta de nuevo.');
+        errorDiv.style.display = 'block';
+    } finally {
+        btn.disabled = false;
     }
 }
 

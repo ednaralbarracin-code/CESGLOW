@@ -206,7 +206,15 @@
     "Política de tratamiento de datos": "Data processing policy",
     "¡Reseña enviada! Gracias 🙏": "Review submitted! Thank you 🙏",
     "Tu cuenta no está activa. Inicia sesión con una cuenta válida.": "Your account is not active. Please log in with a valid account.",
-    "Tu sesión expiró. Inicia sesión de nuevo.": "Your session expired. Please log in again."
+    "Tu sesión expiró. Inicia sesión de nuevo.": "Your session expired. Please log in again.",
+    "Ya dejaste una reseña:": "You already left a review:",
+    "Borrar mi reseña": "Delete my review",
+    "Borrar reseña": "Delete review",
+    "¿Seguro que quieres borrar tu reseña? Esta acción no se puede deshacer.": "Are you sure you want to delete your review? This action cannot be undone.",
+    "Sí, borrar": "Yes, delete",
+    "Tu reseña fue eliminada": "Your review was deleted",
+    "No tienes una reseña para borrar": "You don't have a review to delete",
+    "Error al borrar la reseña": "Error deleting the review"
   };
 
   // Normaliza espacios y el selector de emoji para que las claves coincidan siempre
