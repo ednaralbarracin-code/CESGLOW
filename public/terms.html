@@ -1,6 +1,13 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+    <script>
+        (function () {
+            var l = 'es';
+            try { var s = localStorage.getItem('bscLang'); if (s === 'en' || s === 'es') l = s; } catch (e) {}
+            document.documentElement.lang = l;
+        })();
+    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Términos y Condiciones - CESGLOW</title>
@@ -16,11 +23,12 @@
             border-bottom: 1px solid rgba(216, 180, 160, 0.25);
             display: flex;
             align-items: center;
+            flex-wrap: wrap;
+            row-gap: 10px;
             gap: 15px;
         }
         .logo { font-family: 'Playfair Display', serif; font-size: 24px; color: #D8B4A0; font-weight: 700; }
         .back-btn {
-            margin-left: auto;
             padding: 8px 20px;
             background: #D8B4A0;
             color: white;
@@ -85,16 +93,42 @@
         }
         .contacto h3 { font-family: 'Playfair Display', serif; font-size: 22px; margin-bottom: 10px; }
         .contacto a { color: white; }
+
+        /* Idioma: se oculta el bloque que no corresponde */
+        html[lang="en"] [data-content="es"],
+        html:not([lang="en"]) [data-content="en"] { display: none !important; }
+
+        .lang-switcher {
+            display: flex;
+            margin-left: auto;
+            border: 1px solid #D8B4A0;
+            border-radius: 20px;
+            overflow: hidden;
+        }
+        .lang-switcher button {
+            padding: 5px 12px;
+            font: 500 12px 'Poppins', sans-serif;
+            color: #D8B4A0;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+        }
+        .lang-switcher button.active { background: #D8B4A0; color: #FFFFFF; }
     </style>
 </head>
 <body>
 
     <div class="header">
         <span class="logo">CESGLOW</span>
-        <a href="/" class="back-btn">← Volver al inicio</a>
+        <div class="lang-switcher" role="group" aria-label="Idioma / Language">
+            <button type="button" data-lang="es">ES</button>
+            <button type="button" data-lang="en">EN</button>
+        </div>
+        <a href="/" class="back-btn"><span data-content="es">← Volver al inicio</span><span data-content="en">← Back to home</span></a>
     </div>
 
     <div class="container">
+        <div data-content="es">
         <h1>Términos y Condiciones</h1>
         <p class="fecha">Última actualización: octubre de 2026</p>
 
@@ -161,6 +195,7 @@
             <h2>7. Protección de Datos Personales</h2>
             <p>La información personal que usted proporciona (nombre, correo electrónico, teléfono) es utilizada exclusivamente para gestionar sus citas y mejorar nuestros servicios. No compartimos su información con terceros.</p>
             <p>Usted tiene derecho a solicitar la eliminación de sus datos contactándonos directamente.</p>
+            <p>Puede leer el detalle completo en nuestra <a href="privacy.html" style="color:#D8B4A0;">Política de Tratamiento de Datos</a>.</p>
         </div>
 
         <div class="seccion">
@@ -178,7 +213,118 @@
             <p>Contáctanos en <a href="mailto:edna.esthetician@gmail.com">edna.esthetician@gmail.com</a><br>
             o llámanos al <a href="tel:714-473-9747">714-473-9747</a></p>
         </div>
+        </div>
+
+        <div data-content="en">
+        <h1>Terms and Conditions</h1>
+        <p class="fecha">Last updated: October 2026</p>
+
+        <div class="seccion">
+            <h2>1. Acceptance of the Terms</h2>
+            <p>By booking an appointment, creating an account or using the services of <strong>CESGLOW</strong>, you fully accept these Terms and Conditions. If you do not agree with any of them, we ask that you do not use our services.</p>
+        </div>
+
+        <div class="seccion">
+            <h2>2. Description of Services</h2>
+            <p>CESGLOW offers professional aesthetic and skin care services, including:</p>
+            <ul>
+                <li>Facial treatments (cleansings, rejuvenation, acne and dark spot treatments, dermaplaning, chemical peel)</li>
+                <li>Body treatments (slimming, cellulite, post-surgery, toning, seaweed peel)</li>
+                <li>Specialized facial masks</li>
+                <li>Hair removal</li>
+            </ul>
+            <p>Prices and services are subject to change without prior notice. Please check the current price list before booking.</p>
+        </div>
+
+        <div class="seccion">
+            <h2>3. Bookings and Deposit Policy</h2>
+            <div class="destacado">
+                <strong>⚠️ Mandatory deposit:</strong> To confirm your appointment, a deposit of <strong>$50 USD</strong> is required at the time of booking. This deposit is deducted from the total price of the service.
+            </div>
+            <p>The deposit can be paid using the payment methods indicated by our team when your appointment is confirmed.</p>
+            <p>Without the corresponding deposit, the appointment will not be confirmed and the time slot may be assigned to another client.</p>
+        </div>
+
+        <div class="seccion">
+            <h2>4. Cancellation and No-Show Policy</h2>
+            <div class="destacado">
+                <strong>⚠️ Important:</strong> If you do not show up to your appointment without cancelling at least <strong>24 hours in advance</strong>, you will lose the $50 USD deposit you paid. This amount is non-refundable under any circumstances.
+            </div>
+            <ul>
+                <li><strong>Cancellation more than 24 hours in advance:</strong> The deposit is applied to a new appointment or refunded as agreed.</li>
+                <li><strong>No-show without notice:</strong> The full deposit ($50 USD) is forfeited.</li>
+            </ul>
+            <p>To cancel or reschedule your appointment, contact us at <a href="tel:714-473-9747" style="color:#D8B4A0;">714-473-9747</a> or by email at <a href="mailto:edna.esthetician@gmail.com" style="color:#D8B4A0;">edna.esthetician@gmail.com</a>.</p>
+        </div>
+
+        <div class="seccion">
+            <h2>5. Services for Minors</h2>
+            <p>CESGLOW serves young people aged <strong>14 and over</strong> under the following conditions:</p>
+            <ul>
+                <li>No service will be provided to anyone under 14 years of age.</li>
+                <li>Clients between 14 and 17 years old must be accompanied by their parent or legal guardian during the appointment.</li>
+                <li>When booking an appointment for a minor, the parent or legal guardian automatically accepts these terms and conditions, which constitutes their consent to the treatment.</li>
+                <li>CESGLOW reserves the right to refuse service when these conditions are not met.</li>
+                <li>Some treatments may not be suitable for this age. Our team will assess each case individually.</li>
+            </ul>
+        </div>
+
+        <div class="seccion">
+            <h2>6. Client Responsibility</h2>
+            <ul>
+                <li>Inform our team of any medical condition, allergy or ongoing medical treatment before receiving the service.</li>
+                <li>Arrive on time for your appointment. Delays of more than 15 minutes may result in the cancellation of the appointment without a refund of the deposit.</li>
+                <li>Follow the post-treatment recommendations given by our estheticians.</li>
+            </ul>
+        </div>
+
+        <div class="seccion">
+            <h2>7. Personal Data Protection</h2>
+            <p>The personal information you provide (name, email, phone) is used exclusively to manage your appointments and improve our services. We do not share your information with third parties.</p>
+            <p>You have the right to request the deletion of your data by contacting us directly.</p>
+            <p>You can read the full details in our <a href="privacy.html" style="color:#D8B4A0;">Data Processing Policy</a>.</p>
+        </div>
+
+        <div class="seccion">
+            <h2>8. Reviews and Content</h2>
+            <p>By leaving a review on our site, you authorize CESGLOW to publish it on the platform. Reviews must be truthful and respectful. We reserve the right not to publish inappropriate or offensive content.</p>
+        </div>
+
+        <div class="seccion">
+            <h2>9. Changes to the Terms</h2>
+            <p>CESGLOW reserves the right to modify these Terms and Conditions at any time. Changes will be published on this page with the update date. Continued use of our services implies acceptance of the current terms.</p>
+        </div>
+
+        <div class="contacto">
+            <h3>Have questions?</h3>
+            <p>Contact us at <a href="mailto:edna.esthetician@gmail.com">edna.esthetician@gmail.com</a><br>
+            or call us at <a href="tel:714-473-9747">714-473-9747</a></p>
+        </div>
+        </div>
     </div>
+
+    <script>
+        (function () {
+            var titles = { es: 'Términos y Condiciones - CESGLOW', en: 'Terms and Conditions - CESGLOW' };
+            var botones = document.querySelectorAll('.lang-switcher button');
+            function aplicar(l) {
+                document.documentElement.lang = l;
+                document.title = titles[l];
+                botones.forEach(function (b) {
+                    var on = b.dataset.lang === l;
+                    b.classList.toggle('active', on);
+                    b.setAttribute('aria-pressed', on ? 'true' : 'false');
+                });
+            }
+            botones.forEach(function (b) {
+                b.addEventListener('click', function () {
+                    try { localStorage.setItem('bscLang', b.dataset.lang); } catch (e) {}
+                    aplicar(b.dataset.lang);
+                });
+            });
+            aplicar(document.documentElement.lang === 'en' ? 'en' : 'es');
+        })();
+    </script>
 
 </body>
 </html>

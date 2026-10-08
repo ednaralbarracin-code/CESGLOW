@@ -1,6 +1,13 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+    <script>
+        (function () {
+            var l = 'es';
+            try { var s = localStorage.getItem('bscLang'); if (s === 'en' || s === 'es') l = s; } catch (e) {}
+            document.documentElement.lang = l;
+        })();
+    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Política de Tratamiento de Datos - CESGLOW</title>
@@ -16,11 +23,12 @@
             border-bottom: 1px solid rgba(216, 180, 160, 0.25);
             display: flex;
             align-items: center;
+            flex-wrap: wrap;
+            row-gap: 10px;
             gap: 15px;
         }
         .logo { font-family: 'Playfair Display', serif; font-size: 24px; color: #D8B4A0; font-weight: 700; }
         .back-btn {
-            margin-left: auto;
             padding: 8px 20px;
             background: #D8B4A0;
             color: white;
@@ -93,16 +101,42 @@
             h1 { font-size: 28px; }
             .seccion { padding: 22px 18px; }
         }
+
+        /* Idioma: se oculta el bloque que no corresponde */
+        html[lang="en"] [data-content="es"],
+        html:not([lang="en"]) [data-content="en"] { display: none !important; }
+
+        .lang-switcher {
+            display: flex;
+            margin-left: auto;
+            border: 1px solid #D8B4A0;
+            border-radius: 20px;
+            overflow: hidden;
+        }
+        .lang-switcher button {
+            padding: 5px 12px;
+            font: 500 12px 'Poppins', sans-serif;
+            color: #D8B4A0;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+        }
+        .lang-switcher button.active { background: #D8B4A0; color: #FFFFFF; }
     </style>
 </head>
 <body>
 
     <div class="header">
         <span class="logo">CESGLOW</span>
-        <a href="/" class="back-btn">← Volver al inicio</a>
+        <div class="lang-switcher" role="group" aria-label="Idioma / Language">
+            <button type="button" data-lang="es">ES</button>
+            <button type="button" data-lang="en">EN</button>
+        </div>
+        <a href="/" class="back-btn"><span data-content="es">← Volver al inicio</span><span data-content="en">← Back to home</span></a>
     </div>
 
     <div class="container">
+        <div data-content="es">
         <h1>Política de Tratamiento de Datos</h1>
         <p class="fecha">Última actualización: octubre de 2026</p>
 
@@ -188,7 +222,119 @@
             <p>Escríbenos por <a href="https://wa.me/17144739747" target="_blank" rel="noopener">WhatsApp</a><br>
             o a <a href="mailto:edna.esthetician@gmail.com">edna.esthetician@gmail.com</a></p>
         </div>
+        </div>
+
+        <div data-content="en">
+        <h1>Data Processing Policy</h1>
+        <p class="fecha">Last updated: October 2026</p>
+
+        <div class="seccion">
+            <h2>1. Who we are</h2>
+            <p><strong>CESGLOW</strong> is the party responsible for processing the personal data you provide through this website and our contact channels. This policy explains what data we collect, what we use it for and what your rights are.</p>
+            <p>You can contact us on <a href="https://wa.me/17144739747" target="_blank" rel="noopener">WhatsApp at +1 (714) 473-9747</a> or by email at <a href="mailto:edna.esthetician@gmail.com">edna.esthetician@gmail.com</a>.</p>
+        </div>
+
+        <div class="seccion">
+            <h2>2. Data we collect</h2>
+            <ul>
+                <li><strong>Account data:</strong> first name, last name, email, phone number and password. The password is stored encrypted, not in readable text.</li>
+                <li><strong>Appointment data:</strong> chosen service, date, time and any notes you decide to write. If you share information about your skin, allergies or health conditions in the notes, it is used only to prepare your treatment.</li>
+                <li><strong>Reviews:</strong> the rating and comment you post, along with your name.</li>
+                <li><strong>Browser data:</strong> the site stores your logged-in session and your language preference on your device, so you do not have to repeat them on every visit.</li>
+                <li><strong>WhatsApp messages:</strong> the information you send us through that channel, for example to confirm your deposit.</li>
+            </ul>
+        </div>
+
+        <div class="seccion">
+            <h2>3. What we use your data for</h2>
+            <ul>
+                <li>Create and manage your account.</li>
+                <li>Book, confirm, reschedule or cancel your appointments.</li>
+                <li>Confirm the deposit and payment method over WhatsApp, and process refunds when applicable.</li>
+                <li>Communicate with you about your appointment or answer your questions.</li>
+                <li>Publish your review on the site, with your authorization.</li>
+                <li>Improve our services and comply with the legal obligations that apply to us.</li>
+            </ul>
+            <p>We do not use your data for purposes other than the above without first asking for your authorization.</p>
+        </div>
+
+        <div class="seccion">
+            <h2>4. Payments</h2>
+            <p>This website does not process payments or store card numbers or bank account details. The $50 USD deposit is confirmed over WhatsApp, and any payment information you share there stays in that conversation.</p>
+        </div>
+
+        <div class="seccion">
+            <h2>5. Who we share your data with</h2>
+            <p>We do not sell or transfer your personal data to third parties. To make the site work, we use technology providers (for example, hosting for the site and the database), which process the information only to operate the service.</p>
+            <p>We may also disclose information if a competent authority requires it by law. When you write to us on WhatsApp, that service is also governed by its own privacy policies.</p>
+        </div>
+
+        <div class="seccion">
+            <h2>6. Authorization</h2>
+            <p>By creating your account and accepting this policy, you authorize CESGLOW to process your personal data for the purposes described. You may revoke this authorization at any time by writing to us through the channels listed in section 1.</p>
+        </div>
+
+        <div class="seccion">
+            <h2>7. Minors</h2>
+            <p>CESGLOW serves young people aged 14 and over, accompanied by their parent or legal guardian. Minors' data is processed with the authorization of their parent or legal guardian, who by booking the appointment accepts this policy and our <a href="terms.html">Terms and Conditions</a>.</p>
+        </div>
+
+        <div class="seccion">
+            <h2>8. Your rights</h2>
+            <p>You have the right to:</p>
+            <ul>
+                <li>Know what data of yours we hold and how we use it.</li>
+                <li>Update or correct your data.</li>
+                <li>Request the deletion of your data and your account.</li>
+                <li>Revoke your authorization to process your data.</li>
+            </ul>
+            <div class="destacado">
+                <strong>🗑️ How to delete your account:</strong> log in, open your account menu and tap <strong>"Delete account"</strong>. WhatsApp will open with a message ready to send us your request. You can also write to us directly on <a href="https://wa.me/17144739747" target="_blank" rel="noopener">WhatsApp +1 (714) 473-9747</a>.
+            </div>
+            <p>We will handle your request as soon as possible. We may keep information that the law requires us to retain.</p>
+        </div>
+
+        <div class="seccion">
+            <h2>9. Security and retention</h2>
+            <p>We apply reasonable measures to protect your data, including encrypted storage of passwords. No system is completely infallible, so we cannot guarantee absolute security.</p>
+            <p>We keep your data while your account is active or while it is needed to provide you with the service. If you request the deletion of your account, we will delete it, except for what we must keep due to a legal obligation.</p>
+        </div>
+
+        <div class="seccion">
+            <h2>10. Changes to this policy</h2>
+            <p>We may update this policy. We will publish the current version on this page, with its update date. If we continue to provide you with the service after the change, we understand that you accept the current version.</p>
+        </div>
+
+        <div class="contacto">
+            <h3>Questions about your data?</h3>
+            <p>Write to us on <a href="https://wa.me/17144739747" target="_blank" rel="noopener">WhatsApp</a><br>
+            or at <a href="mailto:edna.esthetician@gmail.com">edna.esthetician@gmail.com</a></p>
+        </div>
+        </div>
     </div>
+
+    <script>
+        (function () {
+            var titles = { es: 'Política de Tratamiento de Datos - CESGLOW', en: 'Data Processing Policy - CESGLOW' };
+            var botones = document.querySelectorAll('.lang-switcher button');
+            function aplicar(l) {
+                document.documentElement.lang = l;
+                document.title = titles[l];
+                botones.forEach(function (b) {
+                    var on = b.dataset.lang === l;
+                    b.classList.toggle('active', on);
+                    b.setAttribute('aria-pressed', on ? 'true' : 'false');
+                });
+            }
+            botones.forEach(function (b) {
+                b.addEventListener('click', function () {
+                    try { localStorage.setItem('bscLang', b.dataset.lang); } catch (e) {}
+                    aplicar(b.dataset.lang);
+                });
+            });
+            aplicar(document.documentElement.lang === 'en' ? 'en' : 'es');
+        })();
+    </script>
 
 </body>
 </html>
