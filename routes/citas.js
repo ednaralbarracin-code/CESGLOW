@@ -108,6 +108,12 @@ router.post('/', verificarToken, (req, res) => {
       return item;
     });
 
+    // Verificar horario de atención
+    const hd = db.prepare('SELECT * FROM horarios WHERE dia = ?').get(new Date(fecha + 'T00:00:00').getDay());
+    if (hd && (!hd.abierto || nuevos.some(n => n.inicio < aMin('0000-00-00T' + hd.apertura) || n.fin > aMin('0000-00-00T' + hd.cierre)))) {
+      return res.status(400).json({ error: 'Ese horario está fuera del horario de atención.' });
+    }
+
     // Verificar que ningún tramo choque con citas existentes
     const ocupados = obtenerIntervalos(fecha);
     if (nuevos.some(n => ocupados.some(o => n.inicio < o.fin && n.fin > o.inicio))) {
@@ -165,4 +171,8 @@ router.put('/:id/cancelar', verificarToken, (req, res) => {
   }
 });
 
+// Horario de atención (público)
+router.get('/horario', (req, res) => res.json(db.prepare('SELECT * FROM horarios ORDER BY dia').all()));
+
+router.notificar = notificar; // lo usa el panel de administración
 module.exports = router;
