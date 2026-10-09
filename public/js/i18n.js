@@ -214,7 +214,12 @@
     "Sí, borrar": "Yes, delete",
     "Tu reseña fue eliminada": "Your review was deleted",
     "No tienes una reseña para borrar": "You don't have a review to delete",
-    "Error al borrar la reseña": "Error deleting the review"
+    "Error al borrar la reseña": "Error deleting the review",
+    "desde $40 asta $200": "from $40 to $200",
+    "desde $40 hasta $200": "from $40 to $200",
+    "a $130": "at $130",
+    "desde $170 a $300": "from $170 to $300",
+    "desde $200 a $300": "from $200 to $300"
   };
 
   // Normaliza espacios y el selector de emoji para que las claves coincidan siempre
