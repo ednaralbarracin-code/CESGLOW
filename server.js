@@ -7,6 +7,7 @@ const { initializeDatabase } = require('./config/database');
 const authRoutes = require('./routes/auth');
 const citasRoutes = require('./routes/citas');
 const resenasRoutes = require('./routes/resenas');
+const adminRoutes = require('./routes/admin');
 const { checkSession } = require('./middleware/auth');
 
 const app = express();
@@ -60,6 +61,8 @@ app.use((req, res, next) => {
     'https://cesglowbeauty.com',
     'https://www.cesglowbeauty.com'
   ];
+  // Dominio(s) del panel de administración, separados por coma (variable ADMIN_ORIGIN en Railway)
+  (process.env.ADMIN_ORIGIN || '').split(',').map(o => o.trim()).filter(Boolean).forEach(o => allowedOrigins.push(o));
   const origin = req.headers.origin;
   if (allowedOrigins.includes(origin)) {
     res.setHeader('Access-Control-Allow-Origin', origin);
@@ -82,10 +85,12 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/api/auth/login', limiterAuth);
 app.use('/api/auth/register', limiterAuth);
 app.use('/api/resenas', limiterResenas);
+app.use('/api/admin/login', limiterAuth);
 
 app.use('/api/auth', authRoutes);
 app.use('/api/citas', citasRoutes);
 app.use('/api/resenas', resenasRoutes);
+app.use('/api/admin', adminRoutes);
 
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
