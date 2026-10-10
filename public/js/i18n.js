@@ -318,4 +318,17 @@
       showOverlay();
     }
   });
+  // Traducciones de los servicios agregados desde el panel de administración
+  document.addEventListener('DOMContentLoaded', function () {
+    fetch((window.BSC_API || '') + '/api/citas/traducciones')
+      .then(function (r) { return r.ok ? r.json() : {}; })
+      .then(function (extra) {
+        var n = 0;
+        Object.keys(extra || {}).forEach(function (k) {
+          if (typeof extra[k] === 'string' && extra[k]) { DICT[norm(k)] = extra[k]; n++; }
+        });
+        if (n && lang === 'en') setLanguage('en', true);
+      })
+      .catch(function () {});
+  });
 })();
