@@ -80,14 +80,13 @@ dialog h2{font-size:22px;margin-bottom:4px}
 <!-- Panel -->
 <section id="panel" class="oculto">
   <header>
-    <h1>Hola, <span id="nom"></span></h1>
+    <h1>Panel de administración</h1>
     <div><button class="btn sec peq" onclick="abrirClave()">Cambiar contraseña</button> <button class="btn sec peq" onclick="salir()">Salir</button></div>
   </header>
   <div id="aviso-clave" class="aviso oculto">Todavía usas la contraseña de fábrica. Por seguridad, <a href="#" onclick="abrirClave();return false">cámbiala ahora</a>.</div>
   <nav>
     <button data-v="citas" class="on">Citas</button>
     <button data-v="servicios">Precios</button>
-    <button data-v="horarios">Horarios</button>
     <button data-v="clientes">Clientes</button>
   </nav>
   <main>
@@ -100,7 +99,6 @@ dialog h2{font-size:22px;margin-bottom:4px}
       <div id="l-citas"></div>
     </div>
     <div id="v-servicios" class="oculto"><div id="l-servicios"></div></div>
-    <div id="v-horarios" class="oculto"><div id="l-horarios"></div></div>
     <div id="v-clientes" class="oculto">
       <div class="barra"><input id="q-cli" placeholder="Buscar cliente" aria-label="Buscar cliente" style="margin-left:0"></div>
       <div id="l-clientes" class="tabla"></div>
@@ -146,12 +144,12 @@ $('#l-btn').onclick = async () => {
 };
 $('#l-pass').onkeydown = e => { if (e.key === 'Enter') $('#l-btn').click(); };
 function salir() { localStorage.removeItem('adm_token'); T = null; $('#panel').classList.add('oculto'); $('#login').classList.remove('oculto'); $('#l-pass').value = ''; }
-function entrar() { $('#login').classList.add('oculto'); $('#panel').classList.remove('oculto'); $('#nom').textContent = localStorage.getItem('adm_nom') || ''; cargarCitas(); }
+function entrar() { $('#login').classList.add('oculto'); $('#panel').classList.remove('oculto'); cargarCitas(); }
 
 document.querySelectorAll('nav button').forEach(b => b.onclick = () => {
   document.querySelectorAll('nav button').forEach(x => x.classList.toggle('on', x === b));
-  ['citas','servicios','horarios','clientes'].forEach(v => $('#v-' + v).classList.toggle('oculto', v !== b.dataset.v));
-  ({ citas: cargarCitas, servicios: cargarServicios, horarios: cargarHorarios, clientes: cargarClientes })[b.dataset.v]();
+  ['citas','servicios','clientes'].forEach(v => $('#v-' + v).classList.toggle('oculto', v !== b.dataset.v));
+  ({ citas: cargarCitas, servicios: cargarServicios, clientes: cargarClientes })[b.dataset.v]();
 });
 
 // ── Citas ──
@@ -203,8 +201,8 @@ const cargarServicios = () => intentar(async () => {
   $('#l-servicios').innerHTML = S.map(s => `
     <div class="fila ${s.activo ? '' : 'inactivo'}" data-id="${s.id_servicio}">
       <div><strong>${esc(s.nombre)}</strong><div class="dato">${esc(s.categoria)}</div></div>
-      <div><label>Precio</label><input type="number" min="0" step="1000" class="p" value="${s.precio}"></div>
-      <div><label>Precio hasta (opcional)</label><input type="number" min="0" step="1000" class="pm" value="${s.precio_max ?? ''}"></div>
+      <div><label>Precio</label><input type="number" min="0" step="5" class="p" value="${s.precio}"></div>
+      <div><label>Precio hasta (opcional)</label><input type="number" min="0" step="5" class="pm" value="${s.precio_max ?? ''}"></div>
       <div><label>Duración (min)</label><input type="number" min="5" step="5" class="d" value="${s.duracion_minutos || 60}"></div>
       <div><label class="chk"><input type="checkbox" class="a" ${s.activo ? 'checked' : ''}> Se ofrece</label><button class="btn peq" style="margin-top:6px" onclick="guardarServicio(this)">Guardar</button></div>
     </div>`).join('');
@@ -217,31 +215,20 @@ function guardarServicio(b) {
   });
 }
 
-// ── Horarios ──
-const DIAS = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
-const cargarHorarios = () => intentar(async () => {
-  const H = await api('/horarios'), orden = [1,2,3,4,5,6,0];
-  $('#l-horarios').innerHTML = orden.map(d => { const h = H.find(x => x.dia === d); return `
-    <div class="fila dia" data-dia="${d}">
-      <strong>${DIAS[d]}</strong>
-      <label class="chk"><input type="checkbox" class="ab" ${h.abierto ? 'checked' : ''}> Abierto</label>
-      <div><label>Abre</label><input type="time" class="ap" value="${h.apertura}"></div>
-      <div><label>Cierra</label><input type="time" class="ci" value="${h.cierre}"></div>
-    </div>`; }).join('') + '<button class="btn" onclick="guardarHorarios()">Guardar horarios</button>';
-});
-const guardarHorarios = () => intentar(async () => {
-  const L = [...document.querySelectorAll('#l-horarios .dia')].map(f => ({ dia: +f.dataset.dia, abierto: f.querySelector('.ab').checked, apertura: f.querySelector('.ap').value, cierre: f.querySelector('.ci').value }));
-  await api('/horarios', 'PUT', L); aviso('Horarios guardados');
-});
-
 // ── Clientes ──
 const cargarClientes = () => intentar(async () => { CLIENTES = await api('/clientes'); pintarClientes(); });
 $('#q-cli').oninput = () => pintarClientes();
 function pintarClientes() {
   const q = $('#q-cli').value.toLowerCase();
   const L = CLIENTES.filter(c => (c.nombre + ' ' + c.apellido + ' ' + c.email + ' ' + (c.telefono || '')).toLowerCase().includes(q));
-  $('#l-clientes').innerHTML = L.length ? `<table><thead><tr><th>Nombre</th><th>Teléfono</th><th>Correo</th><th>Citas</th><th>Última cita</th></tr></thead><tbody>${L.map(c => `
-    <tr><td>${esc(c.nombre)} ${esc(c.apellido)}</td><td>${c.telefono ? `<a href="${wa(c.telefono)}" target="_blank" rel="noopener">${esc(c.telefono)}</a>` : '—'}</td><td>${esc(c.email)}</td><td>${c.total_citas}</td><td>${c.ultima_cita ? fecha(c.ultima_cita) : '—'}</td></tr>`).join('')}</tbody></table>` : '<div class="vacio">No se encontraron clientes.</div>';
+  $('#l-clientes').innerHTML = L.length ? `<table><thead><tr><th>Nombre</th><th>Teléfono</th><th>Correo</th><th>Citas</th><th>Última cita</th><th></th></tr></thead><tbody>${L.map(c => `
+    <tr><td>${esc(c.nombre)} ${esc(c.apellido)}</td><td>${c.telefono ? `<a href="${wa(c.telefono)}" target="_blank" rel="noopener">${esc(c.telefono)}</a>` : '—'}</td><td>${esc(c.email)}</td><td>${c.total_citas}</td><td>${c.ultima_cita ? fecha(c.ultima_cita) : '—'}</td><td><button class="btn mal peq" onclick="borrarCliente(${c.id_usuario})">Eliminar</button></td></tr>`).join('')}</tbody></table>` : '<div class="vacio">No se encontraron clientes.</div>';
+}
+
+function borrarCliente(id) {
+  const c = CLIENTES.find(x => x.id_usuario === id);
+  if (confirm(`¿Eliminar a ${c.nombre} ${c.apellido}?\nSe borrarán también sus ${c.total_citas} citas y sus reseñas. Esto no se puede deshacer.`))
+    intentar(async () => { await api('/clientes/' + id, 'DELETE'); aviso('Cliente eliminado'); cargarClientes(); });
 }
 
 // ── Contraseña ──
