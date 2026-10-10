@@ -92,6 +92,8 @@ app.use('/api/citas', citasRoutes);
 app.use('/api/resenas', resenasRoutes);
 app.use('/api/admin', adminRoutes);
 
+app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
+
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
