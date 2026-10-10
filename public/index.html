@@ -10,7 +10,9 @@
     <style>
         /* Nuestro Trabajo: las 5 tarjetas en una sola fila (en pantallas grandes) */
         @media (min-width: 1100px) {
-            .work-grid { display: grid !important; grid-template-columns: repeat(5, 1fr) !important; }
+            .work-grid { display: grid !important; grid-template-columns: repeat(5, 1fr) !important; gap: 22px !important; }
+            .work-grid .work-item { height: 260px !important; } /* alto de las tarjetas: cambia 260px si las quieres más grandes o más pequeñas */
+            .work-grid .work-image { height: 100% !important; }
         }
     </style>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -178,7 +180,7 @@
                     <img src="images/trabajo3.jpg" alt="Tratamiento Corporal" style="width:98%; height:98%; object-fit:cover;">
                 </div>
                 <div class="work-info">
-                    <h4>Depilacion con cera</h4>
+                    <h4>Depilación con cera</h4>
                     <p>Resultados Excepcionales</p>
                 </div>
             </div>
@@ -193,11 +195,11 @@
             </div>
             <div class="work-item">
                 <div class="work-image">
-                    <img src="images/trabajo5.jpg" alt="Descripción de la foto" style="width:100%; height:100%; object-fit:cover;">
+                    <img src="images/trabajo5.jpg" alt="Tratamientos de acné" style="width:100%; height:100%; object-fit:cover;">
                 </div>
                 <div class="work-info">
-                    <h4>Tratamientos de acne</h4>
-                    <p>Piel mas suabe y estética</p>
+                    <h4>Tratamientos de acné</h4>
+                    <p>Piel más suave y estética</p>
                 </div>
             </div>
         </div>
