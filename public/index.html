@@ -7,6 +7,12 @@
     <title>CESGLOW | Cuidado Profesional de la Piel</title>
     <script>try{if(localStorage.getItem("bscLang")){document.documentElement.classList.add("lang-chosen");}}catch(e){}</script>
     <link rel="stylesheet" href="css/styles.css">
+    <style>
+        /* Nuestro Trabajo: las 5 tarjetas en una sola fila (en pantallas grandes) */
+        @media (min-width: 1100px) {
+            .work-grid { display: grid !important; grid-template-columns: repeat(5, 1fr) !important; }
+        }
+    </style>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
