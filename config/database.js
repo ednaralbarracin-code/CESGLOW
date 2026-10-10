@@ -1,8 +1,10 @@
 const Database = require('better-sqlite3');
 const path = require('path');
+const fs = require('fs');
 const bcrypt = require('bcryptjs');
 
-const dbPath = path.join(__dirname, '..', 'beauty_care.db');
+const dbPath = process.env.DB_PATH || path.join(__dirname, '..', 'beauty_care.db');
+fs.mkdirSync(path.dirname(dbPath), { recursive: true }); // evita que el servidor se caiga si la carpeta no existe
 const db = new Database(dbPath);
 
 // Inicializar la base de datos con la estructura del archivo SQL
@@ -69,9 +71,16 @@ function initializeDatabase() {
     )
   `);
 
-  // Insertar servicios predeterminados si no existen
-  // Limpiar y reinsertar servicios actualizados
-  db.exec('DELETE FROM servicios');
+  // Horario de atención (lo edita el administrador desde el panel)
+  db.exec(`CREATE TABLE IF NOT EXISTS horarios (
+    dia INTEGER PRIMARY KEY, abierto INTEGER DEFAULT 1,
+    apertura TEXT DEFAULT '08:00', cierre TEXT DEFAULT '19:00')`);
+  if (db.prepare('SELECT COUNT(*) n FROM horarios').get().n === 0) {
+    for (let i = 0; i < 7; i++) db.prepare('INSERT INTO horarios (dia, abierto) VALUES (?, ?)').run(i, i === 0 ? 0 : 1);
+  }
+
+  // Servicios predeterminados: solo se crean si la tabla está vacía (así no se pierden los cambios del panel)
+  if (db.prepare('SELECT COUNT(*) n FROM servicios').get().n === 0) {
   const insertService = db.prepare(`
     INSERT INTO servicios (nombre, descripcion, precio, precio_max, categoria, duracion_minutos, activo)
     VALUES (?, ?, ?, ?, ?, ?, 1)
@@ -93,6 +102,7 @@ function initializeDatabase() {
   insertService.run('Posoperatorio', '', 170, null, 'Tratamientos Corporales', 60);
   insertService.run('Tonificación', '', 180, null, 'Tratamientos Corporales', 60);
   insertService.run('Peelling de algas natural', '', 300, null, 'Tratamientos Corporales', 75);
+  }
 
   // Crear usuario admin predeterminado si no existe
   const adminExists = db.prepare('SELECT * FROM usuarios WHERE email = ?').get('admin@beautysite.com');
