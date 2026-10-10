@@ -4,115 +4,158 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow">
-<title>Panel de administración</title>
+<title>Panel · Beauty Skin Care</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Nunito+Sans:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
-:root{--fondo:#faf6f4;--tarjeta:#fff;--tinta:#2b2326;--suave:#7a6d70;--rosa:#a8456b;--rosa-f:#8c3558;--borde:#eadfe0;--ok:#2f7d57;--mal:#b3392f;--aviso:#b9770e}
+:root{--fondo:#f4f0f5;--tarjeta:#fff;--tinta:#2a2030;--suave:#6f6477;--borde:#e6dde9;--ac:#9c2f5f;--acf:#7f2350;--lado:#2a1b33;--ok:#2d7a5a;--mal:#b3392f;--aviso:#a8741a;--serif:'Fraunces',Georgia,serif}
 *{box-sizing:border-box}
-body{margin:0;font:17px/1.5 Georgia,'Times New Roman',serif;background:var(--fondo);color:var(--tinta)}
+body{margin:0;font:17px/1.5 'Nunito Sans',system-ui,sans-serif;background:var(--fondo);color:var(--tinta)}
 button,input,select{font:inherit}
-h1,h2{font-weight:normal;margin:0}
-.centro{min-height:100vh;display:grid;place-items:center;padding:20px}
-.caja{background:var(--tarjeta);border:1px solid var(--borde);border-radius:14px;padding:28px;width:100%;max-width:400px}
-.caja h1{font-size:28px;margin-bottom:6px}
-label{display:block;margin:14px 0 4px;color:var(--suave);font-size:15px}
-input,select{width:100%;padding:12px;border:1px solid var(--borde);border-radius:10px;background:#fff;color:var(--tinta)}
-input:focus,button:focus-visible,a:focus-visible{outline:3px solid #e7b3c8;outline-offset:1px}
-.btn{border:0;border-radius:10px;padding:12px 18px;background:var(--rosa);color:#fff;cursor:pointer;font-size:16px}
-.btn:hover{background:var(--rosa-f)}
-.btn.sec{background:#f3e8ea;color:var(--tinta)}.btn.sec:hover{background:#ead9dd}
+h1,h2,h3{font-family:var(--serif);font-weight:500;margin:0}
+input,select{width:100%;padding:12px 13px;border:1px solid var(--borde);border-radius:10px;background:#fff;color:var(--tinta)}
+input[type=checkbox]{width:20px;height:20px;accent-color:var(--ac)}
+input:focus,select:focus,button:focus-visible,a:focus-visible{outline:3px solid #e2b5cb;outline-offset:1px}
+label{display:block;margin:14px 0 5px;color:var(--suave);font-size:14px;font-weight:600}
+.btn{border:0;border-radius:10px;padding:12px 18px;background:var(--ac);color:#fff;cursor:pointer;font-weight:700}
+.btn:hover{background:var(--acf)}
+.btn.sec{background:#efe7f1;color:var(--tinta)}.btn.sec:hover{background:#e4d8e8}
 .btn.ok{background:var(--ok)}.btn.mal{background:var(--mal)}
-.btn.peq{padding:8px 13px;font-size:15px}
-.ancho{width:100%;margin-top:20px}
-header{background:var(--tarjeta);border-bottom:1px solid var(--borde);padding:14px 20px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
-header h1{font-size:22px}
-nav{display:flex;gap:6px;flex-wrap:wrap;padding:14px 20px 0;max-width:980px;margin:auto}
-nav button{border:1px solid var(--borde);background:var(--tarjeta);padding:11px 18px;border-radius:999px;cursor:pointer;color:var(--suave)}
-nav button.on{background:var(--rosa);border-color:var(--rosa);color:#fff}
-main{max-width:980px;margin:auto;padding:18px 20px 60px}
-.barra{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;align-items:center}
-.barra input{max-width:260px;margin-left:auto}
-.chip{border:1px solid var(--borde);background:var(--tarjeta);border-radius:999px;padding:8px 15px;cursor:pointer;font-size:15px}
-.chip.on{background:var(--tinta);color:#fff;border-color:var(--tinta)}
-.cita{background:var(--tarjeta);border:1px solid var(--borde);border-radius:14px;padding:16px;margin-bottom:12px;display:grid;grid-template-columns:110px 1fr;gap:16px}
-.hora{font-size:26px;line-height:1.1}.hora small{display:block;font-size:14px;color:var(--suave);margin-top:4px;text-transform:capitalize}
-.cita h2{font-size:19px}
-.dato{color:var(--suave);font-size:15px}
-.acciones{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:8px;padding-top:6px}
-.estado{display:inline-block;padding:2px 10px;border-radius:999px;font-size:13px;margin-left:8px;border:1px solid currentColor;vertical-align:middle}
-.pendiente{color:var(--aviso)}.confirmada{color:var(--ok)}.cancelada{color:var(--mal)}.completada{color:var(--suave)}
-.fila{background:var(--tarjeta);border:1px solid var(--borde);border-radius:14px;padding:14px 16px;margin-bottom:10px;display:grid;grid-template-columns:2fr repeat(3,1fr) auto;gap:10px;align-items:end}
-.fila.inactivo{opacity:.6}
-.fila label{margin:0 0 3px;font-size:13px}
-.chk{display:flex;align-items:center;gap:8px;margin:0;color:var(--tinta)}.chk input{width:auto}
-.dia{grid-template-columns:130px 130px 1fr 1fr}
-.vacio{text-align:center;color:var(--suave);padding:40px 10px;background:var(--tarjeta);border:1px dashed var(--borde);border-radius:14px}
-.aviso{background:#fff4dd;border:1px solid #ecd39b;padding:12px 16px;border-radius:12px;margin:14px 20px 0;max-width:940px}
-@media(min-width:1000px){.aviso{margin:14px auto 0}}
-table{width:100%;border-collapse:collapse;background:var(--tarjeta);border:1px solid var(--borde);border-radius:14px;overflow:hidden}
-th,td{text-align:left;padding:12px 14px;border-bottom:1px solid var(--borde);font-size:15px}
-th{color:var(--suave);font-weight:normal;background:#fcf8f7}
-.tabla{overflow-x:auto}
-a{color:var(--rosa)}
-dialog{border:0;border-radius:14px;padding:26px;max-width:420px;width:92%}
-dialog::backdrop{background:rgba(43,35,38,.45)}
-dialog h2{font-size:22px;margin-bottom:4px}
-.par{display:flex;gap:8px;margin-top:20px;justify-content:flex-end}
-#aviso-toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);padding:13px 22px;border-radius:12px;color:#fff;background:var(--ok);display:none;z-index:9;max-width:90%}
-#aviso-toast.mal{background:var(--mal)}
+.btn.peq{padding:8px 14px;font-size:15px}
+a{color:var(--ac)}
 .oculto{display:none!important}
-@media(max-width:700px){.cita{grid-template-columns:1fr}.fila{grid-template-columns:1fr 1fr}.fila>:first-child{grid-column:1/-1}.dia{grid-template-columns:1fr 1fr}.barra input{max-width:none;margin:0;width:100%}}
+.dato{color:var(--suave);font-size:15px}
+
+/* Entrada */
+#login{min-height:100vh;display:grid;place-items:center;padding:20px;background:var(--lado)}
+.caja{background:#fff;border-radius:18px;padding:34px;width:100%;max-width:410px}
+.caja h1{font-size:30px;margin:4px 0 6px}
+.marca b{font-family:var(--serif);font-size:24px;font-weight:600;letter-spacing:.04em;color:var(--ac)}
+#l-btn{width:100%;margin-top:22px;padding:14px}
+
+/* Panel */
+.app{display:grid;grid-template-columns:250px 1fr;min-height:100vh}
+.lado{background:var(--lado);color:#f1e8f3;padding:26px 16px;display:flex;flex-direction:column;gap:6px;position:sticky;top:0;height:100vh}
+.lado .marca{padding:0 10px 22px}.lado .marca b{color:#fff;font-size:28px;display:block;line-height:1}
+.lado .marca span{font-size:13px;color:#bba9c1}
+.lado nav button{display:flex;align-items:center;gap:12px;width:100%;border:0;background:none;color:#d9cade;padding:13px 14px;border-radius:12px;cursor:pointer;text-align:left;font-weight:600}
+.lado nav button:hover{background:rgba(255,255,255,.08)}
+.lado nav button.on{background:#fff;color:var(--lado)}
+.lado svg{width:22px;height:22px;flex:none;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.lado .pie{margin-top:auto;display:grid;gap:4px}
+.lado .pie button{border:0;background:none;color:#bba9c1;text-align:left;padding:9px 14px;cursor:pointer;border-radius:10px}
+.lado .pie button:hover{color:#fff;background:rgba(255,255,255,.08)}
+.cont{padding:30px 34px 70px;max-width:1000px;width:100%}
+.titulo{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin-bottom:20px}
+.titulo h1{font-size:32px}
+.aviso{background:#fff3da;border:1px solid #ebd39c;padding:12px 16px;border-radius:12px;margin-bottom:18px}
+
+/* Citas */
+.barra{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px;align-items:center}
+.chip{border:1px solid var(--borde);background:#fff;border-radius:999px;padding:8px 15px;cursor:pointer;font-weight:600;color:var(--suave)}
+.chip i{font-style:normal;background:#efe7f1;border-radius:999px;padding:0 8px;margin-left:5px;font-size:13px}
+.chip.on{background:var(--ac);border-color:var(--ac);color:#fff}.chip.on i{background:rgba(255,255,255,.25)}
+.buscar{max-width:250px;margin-left:auto}
+.dia-t{font-size:20px;margin:24px 0 10px;text-transform:capitalize}
+.cita{background:#fff;border:1px solid var(--borde);border-left:6px solid var(--aviso);border-radius:14px;padding:16px 18px;margin-bottom:10px;display:grid;grid-template-columns:100px 1fr;gap:6px 18px}
+.cita.confirmada{border-left-color:var(--ok)}.cita.cancelada{border-left-color:var(--mal);opacity:.78}.cita.completada{border-left-color:#a99bb0}
+.hora{font-family:var(--serif);font-size:25px;line-height:1.2}
+.hora small{display:block;font-family:'Nunito Sans',sans-serif;font-size:13px;color:var(--suave);text-transform:capitalize}
+.cita h2{font-size:20px}
+.estado{font:700 12px 'Nunito Sans',sans-serif;margin-left:8px;padding:3px 10px;border-radius:999px;background:#fbefd3;color:var(--aviso);vertical-align:middle}
+.confirmada .estado{background:#dff1e8;color:var(--ok)}.cancelada .estado{background:#f8dedb;color:var(--mal)}.completada .estado{background:#ece6ef;color:var(--suave)}
+.acciones{grid-column:2;display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.vacio{text-align:center;color:var(--suave);padding:46px 10px;background:#fff;border:1px dashed var(--borde);border-radius:14px}
+
+/* Servicios */
+.cat{font-size:20px;margin:26px 0 10px;color:var(--ac)}
+.fila{background:#fff;border:1px solid var(--borde);border-radius:14px;padding:14px 18px;margin-bottom:10px;display:grid;grid-template-columns:2fr 1fr 1fr 1fr auto;gap:12px;align-items:end}
+.fila.inactivo{opacity:.55}
+.fila label{margin:0 0 4px;font-size:13px}
+.fila strong{font-size:17px}
+.chk{display:flex;align-items:center;gap:8px;color:var(--tinta)!important;font-size:15px!important}
+.dos{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+/* Clientes */
+.tabla{overflow-x:auto;background:#fff;border:1px solid var(--borde);border-radius:14px}
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:13px 16px;border-bottom:1px solid var(--borde);font-size:15px;white-space:nowrap}
+th{color:var(--suave);font-weight:700;background:#faf7fb;font-size:13px}
+tr:last-child td{border-bottom:0}
+
+dialog{border:0;border-radius:16px;padding:28px;max-width:430px;width:92%}
+dialog::backdrop{background:rgba(42,27,51,.5)}
+dialog h2{font-size:24px}
+.par{display:flex;gap:8px;margin-top:22px;justify-content:flex-end}
+#toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);padding:13px 22px;border-radius:12px;color:#fff;background:var(--ok);display:none;z-index:99;max-width:90%;font-weight:700}
+#toast.mal{background:var(--mal)}
+
+@media(max-width:820px){
+ .app{grid-template-columns:1fr}
+ .lado{position:sticky;height:auto;flex-direction:row;flex-wrap:wrap;align-items:center;padding:10px 12px;gap:6px;z-index:5}
+ .lado .marca{padding:0 8px 0 4px;margin-right:auto}.lado .marca span{display:none}.lado .marca b{font-size:22px}
+ .lado nav{display:flex;gap:4px;order:3;width:100%}.lado nav button{justify-content:center;padding:10px 6px;gap:6px;font-size:15px}
+ .lado .pie{margin:0;display:flex}.lado .pie button{padding:8px 10px;font-size:14px}
+ .cont{padding:20px 14px 70px}.titulo h1{font-size:26px}
+ .cita{grid-template-columns:1fr}.acciones{grid-column:1}
+ .fila{grid-template-columns:1fr 1fr}.fila>:first-child{grid-column:1/-1}
+ .buscar{max-width:none;margin:6px 0 0;width:100%}
+}
 </style>
 </head>
 <body>
 
-<!-- Entrada -->
-<section id="login" class="centro">
+<section id="login">
   <div class="caja">
-    <h1>Panel de administración</h1>
-    <div class="dato">Entra con tu correo y contraseña.</div>
+    <div class="marca"><b>BSC</b></div>
+    <h1>Bienvenida</h1>
+    <div class="dato">Entra con tu correo y contraseña para ver tus citas.</div>
     <label for="l-email">Correo</label><input id="l-email" type="email" autocomplete="username">
     <label for="l-pass">Contraseña</label><input id="l-pass" type="password" autocomplete="current-password">
-    <button class="btn ancho" id="l-btn">Entrar</button>
+    <button class="btn" id="l-btn">Entrar</button>
     <div id="l-err" class="dato" style="color:var(--mal);margin-top:12px"></div>
   </div>
 </section>
 
-<!-- Panel -->
-<section id="panel" class="oculto">
-  <header>
-    <h1>Panel de administración</h1>
-    <div><button class="btn sec peq" onclick="abrirClave()">Cambiar contraseña</button> <button class="btn sec peq" onclick="salir()">Salir</button></div>
-  </header>
-  <div id="aviso-clave" class="aviso oculto">Todavía usas la contraseña de fábrica. Por seguridad, <a href="#" onclick="abrirClave();return false">cámbiala ahora</a>.</div>
-  <nav>
-    <button data-v="citas" class="on">Citas</button>
-    <button data-v="servicios">Precios</button>
-    <button data-v="clientes">Clientes</button>
-  </nav>
-  <main>
+<section id="panel" class="app oculto">
+  <aside class="lado">
+    <div class="marca"><b>BSC</b><span>Beauty Skin Care</span></div>
+    <nav>
+      <button data-v="citas" class="on"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Citas</button>
+      <button data-v="servicios"><svg viewBox="0 0 24 24"><path d="M3 12V4h8l10 10-8 8z"/><circle cx="7.5" cy="8.5" r="1.2"/></svg>Servicios</button>
+      <button data-v="clientes"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.5-4 3-6 6.500-6s6 2 6.500 6M16 4.500a3.500 3.500 0 0 1 0 7M18 14c2 .7 3.200 2.700 3.500 6"/></svg>Clientes</button>
+    </nav>
+    <div class="pie"><button onclick="abrirClave()">Cambiar contraseña</button><button onclick="salir()">Salir</button></div>
+  </aside>
+  <div class="cont">
+    <div id="aviso-clave" class="aviso oculto">Todavía usas la contraseña de fábrica. Por seguridad, <a href="#" onclick="abrirClave();return false">cámbiala ahora</a>.</div>
     <div id="v-citas">
+      <div class="titulo"><h1>Citas</h1></div>
       <div class="barra">
-        <button class="chip on" data-f="hoy">Hoy</button><button class="chip" data-f="prox">Próximas</button>
-        <button class="chip" data-f="pend">Por confirmar</button><button class="chip" data-f="canc">Canceladas</button><button class="chip" data-f="todas">Todas</button>
-        <input id="q-citas" placeholder="Buscar por nombre o servicio" aria-label="Buscar citas">
+        <button class="chip on" data-f="hoy">Hoy <i></i></button><button class="chip" data-f="prox">Próximas <i></i></button>
+        <button class="chip" data-f="pend">Por confirmar <i></i></button><button class="chip" data-f="canc">Canceladas <i></i></button><button class="chip" data-f="todas">Todas <i></i></button>
+        <input id="q-citas" class="buscar" placeholder="Buscar por nombre o servicio" aria-label="Buscar citas">
       </div>
       <div id="l-citas"></div>
     </div>
-    <div id="v-servicios" class="oculto"><div id="l-servicios"></div></div>
-    <div id="v-clientes" class="oculto">
-      <div class="barra"><input id="q-cli" placeholder="Buscar cliente" aria-label="Buscar cliente" style="margin-left:0"></div>
-      <div id="l-clientes" class="tabla"></div>
+    <div id="v-servicios" class="oculto">
+      <div class="titulo"><h1>Servicios y precios</h1><button class="btn" onclick="nuevoServicio()">+ Agregar servicio</button></div>
+      <div id="l-servicios"></div>
     </div>
-  </main>
+    <div id="v-clientes" class="oculto">
+      <div class="titulo"><h1>Clientes</h1><input id="q-cli" class="buscar" placeholder="Buscar cliente" aria-label="Buscar cliente" style="margin:0"></div>
+      <div id="l-clientes"></div>
+    </div>
+  </div>
 </section>
 
 <dialog id="m"></dialog>
-<div id="aviso-toast" role="status"></div>
+<div id="toast" role="status"></div>
 
 <script>
-// Si esta página se aloja en Cloudflare Pages (y no en Railway), pon aquí la URL de Railway, ej: 'https://tuapp.up.railway.app'
+// Si esta página se aloja fuera de Railway (ej. Cloudflare Pages), pon aquí la URL de Railway, ej: 'https://tuapp.up.railway.app'
 const API = '';
-let T = localStorage.getItem('adm_token'), CITAS = [], CLIENTES = [], filtro = 'hoy';
+let T = localStorage.getItem('adm_token'), CITAS = [], CLIENTES = [], SERV = [], filtro = 'hoy';
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const pesos = n => '$' + Number(n).toLocaleString('es-CO');
@@ -120,9 +163,9 @@ const hoy = () => { const d = new Date(); return d.getFullYear() + '-' + String(
 const fecha = f => { const [y,m,d] = f.substr(0,10).split('-'); return new Date(y, m-1, d).toLocaleDateString('es-CO', {weekday:'long', day:'numeric', month:'long'}); };
 const hora = f => { let [h,m] = f.substr(11,5).split(':'); h = +h; return (h%12||12) + ':' + m + (h<12 ? ' am' : ' pm'); };
 const wa = t => { const n = String(t||'').replace(/\D/g,''); return n ? 'https://wa.me/' + (n.length === 10 ? '57' : '') + n : ''; };
+const ETQ = { pendiente: 'Por confirmar', confirmada: 'Confirmada', cancelada: 'Cancelada', completada: 'Atendida' };
 
-function aviso(msg, mal) { const t = $('#aviso-toast'); t.textContent = msg; t.className = mal ? 'mal' : ''; t.style.display = 'block'; clearTimeout(aviso.t); aviso.t = setTimeout(() => t.style.display = 'none', 3500); }
-
+function aviso(msg, mal) { const t = $('#toast'); t.textContent = msg; t.className = mal ? 'mal' : ''; t.style.display = 'block'; clearTimeout(aviso.t); aviso.t = setTimeout(() => t.style.display = 'none', 3500); }
 async function api(ruta, metodo = 'GET', cuerpo) {
   const r = await fetch(API + '/api/admin' + ruta, { method: metodo, headers: { 'Content-Type': 'application/json', ...(T ? { Authorization: 'Bearer ' + T } : {}) }, body: cuerpo ? JSON.stringify(cuerpo) : undefined }).catch(() => { throw new Error('No se pudo conectar con el servidor. Revisa tu internet o la dirección de Railway.'); });
   const d = await r.json().catch(() => ({}));
@@ -132,12 +175,12 @@ async function api(ruta, metodo = 'GET', cuerpo) {
 }
 async function intentar(fn) { try { await fn(); } catch (e) { aviso(e.message, true); } }
 
-// ── Sesión ──
+// Sesión
 $('#l-btn').onclick = async () => {
   $('#l-err').textContent = '';
   try {
     const d = await api('/login', 'POST', { email: $('#l-email').value, password: $('#l-pass').value });
-    T = d.token; localStorage.setItem('adm_token', T); localStorage.setItem('adm_nom', d.nombre);
+    T = d.token; localStorage.setItem('adm_token', T);
     $('#aviso-clave').classList.toggle('oculto', !d.cambiar);
     entrar();
   } catch (e) { $('#l-err').textContent = e.message; }
@@ -145,31 +188,31 @@ $('#l-btn').onclick = async () => {
 $('#l-pass').onkeydown = e => { if (e.key === 'Enter') $('#l-btn').click(); };
 function salir() { localStorage.removeItem('adm_token'); T = null; $('#panel').classList.add('oculto'); $('#login').classList.remove('oculto'); $('#l-pass').value = ''; }
 function entrar() { $('#login').classList.add('oculto'); $('#panel').classList.remove('oculto'); cargarCitas(); }
-
-document.querySelectorAll('nav button').forEach(b => b.onclick = () => {
-  document.querySelectorAll('nav button').forEach(x => x.classList.toggle('on', x === b));
+document.querySelectorAll('.lado nav button').forEach(b => b.onclick = () => {
+  document.querySelectorAll('.lado nav button').forEach(x => x.classList.toggle('on', x === b));
   ['citas','servicios','clientes'].forEach(v => $('#v-' + v).classList.toggle('oculto', v !== b.dataset.v));
   ({ citas: cargarCitas, servicios: cargarServicios, clientes: cargarClientes })[b.dataset.v]();
 });
 
-// ── Citas ──
+// Citas
+const pasa = (c, f) => { const d = c.fecha_cita.substr(0,10), h = hoy(), v = c.estado !== 'cancelada'; return { hoy: d === h && v, prox: d >= h && v, pend: c.estado === 'pendiente', canc: !v, todas: true }[f]; };
 const cargarCitas = () => intentar(async () => { CITAS = await api('/citas'); pintarCitas(); });
 document.querySelectorAll('.chip').forEach(c => c.onclick = () => { filtro = c.dataset.f; document.querySelectorAll('.chip').forEach(x => x.classList.toggle('on', x === c)); pintarCitas(); });
 $('#q-citas').oninput = () => pintarCitas();
-
 function pintarCitas() {
-  const q = $('#q-citas').value.toLowerCase(), h = hoy();
-  const L = CITAS.filter(c => {
-    const d = c.fecha_cita.substr(0,10), viva = c.estado !== 'cancelada';
-    const ok = { hoy: d === h && viva, prox: d >= h && viva, pend: c.estado === 'pendiente', canc: !viva, todas: true }[filtro];
-    return ok && (c.nombre + ' ' + c.apellido + ' ' + c.servicio).toLowerCase().includes(q);
-  });
+  document.querySelectorAll('.chip').forEach(b => b.querySelector('i').textContent = CITAS.filter(c => pasa(c, b.dataset.f)).length);
+  const q = $('#q-citas').value.toLowerCase();
+  const L = CITAS.filter(c => pasa(c, filtro) && (c.nombre + ' ' + c.apellido + ' ' + c.servicio).toLowerCase().includes(q));
   if (filtro === 'hoy' || filtro === 'prox') L.sort((a, b) => a.fecha_cita < b.fecha_cita ? -1 : 1);
-  $('#l-citas').innerHTML = L.length ? L.map(c => `
-    <article class="cita">
-      <div class="hora">${hora(c.fecha_cita)}<small>${fecha(c.fecha_cita)}</small></div>
+  let ult = '';
+  $('#l-citas').innerHTML = L.length ? L.map(c => {
+    const d = c.fecha_cita.substr(0,10); let t = '';
+    if (filtro !== 'hoy' && d !== ult) { t = `<h3 class="dia-t">${fecha(c.fecha_cita)}</h3>`; ult = d; }
+    return t + `
+    <article class="cita ${c.estado}">
+      <div class="hora">${hora(c.fecha_cita)}</div>
       <div>
-        <h2>${esc(c.nombre)} ${esc(c.apellido)}<span class="estado ${c.estado}">${c.estado}</span></h2>
+        <h2>${esc(c.nombre)} ${esc(c.apellido)}<span class="estado">${ETQ[c.estado] || c.estado}</span></h2>
         <div>${esc(c.servicio)} · ${pesos(c.precio)} · ${c.duracion_minutos || 60} min</div>
         <div class="dato">${c.telefono ? `<a href="${wa(c.telefono)}" target="_blank" rel="noopener">${esc(c.telefono)} (WhatsApp)</a> · ` : ''}${esc(c.email)}</div>
         ${c.notas ? `<div class="dato">Nota del cliente: ${esc(c.notas)}</div>` : ''}
@@ -179,7 +222,7 @@ function pintarCitas() {
         ${c.estado === 'confirmada' ? `<button class="btn sec peq" onclick="estadoCita(${c.id_cita},'completada')">Marcar como atendida</button>` : ''}
         ${c.estado !== 'cancelada' && c.estado !== 'completada' ? `<button class="btn sec peq" onclick="reagendar(${c.id_cita})">Cambiar fecha u hora</button><button class="btn mal peq" onclick="cancelarCita(${c.id_cita})">Cancelar cita</button>` : ''}
       </div>
-    </article>`).join('') : '<div class="vacio">No hay citas en esta lista.</div>';
+    </article>`; }).join('') : '<div class="vacio">No hay citas en esta lista.</div>';
 }
 const estadoCita = (id, estado) => intentar(async () => { await api('/citas/' + id, 'PUT', { estado }); aviso('Cita actualizada'); cargarCitas(); });
 function cancelarCita(id) {
@@ -187,7 +230,7 @@ function cancelarCita(id) {
   if (confirm(`¿Cancelar la cita de ${c.nombre} ${c.apellido} (${fecha(c.fecha_cita)}, ${hora(c.fecha_cita)})?\nEl horario quedará libre.`)) estadoCita(id, 'cancelada');
 }
 function reagendar(id) {
-  const c = CITAS.find(x => x.id_cita === id), m = $('#m');
+  const c = CITAS.find(x => x.id_cita === id);
   m.innerHTML = `<h2>Cambiar fecha u hora</h2><div class="dato">${esc(c.nombre)} ${esc(c.apellido)} · ${esc(c.servicio)}</div>
     <label for="nf">Nueva fecha y hora</label><input id="nf" type="datetime-local" step="900" value="${c.fecha_cita.substr(0,16)}">
     <div class="par"><button class="btn sec" onclick="m.close()">Volver</button><button class="btn" id="ok-r">Guardar cambio</button></div>`;
@@ -195,17 +238,19 @@ function reagendar(id) {
   $('#ok-r').onclick = () => intentar(async () => { await api('/citas/' + id, 'PUT', { fecha_cita: $('#nf').value }); m.close(); aviso('Cita reagendada'); cargarCitas(); });
 }
 
-// ── Precios ──
+// Servicios
 const cargarServicios = () => intentar(async () => {
-  const S = await api('/servicios');
-  $('#l-servicios').innerHTML = S.map(s => `
+  SERV = await api('/servicios'); let cat = '';
+  $('#l-servicios').innerHTML = SERV.map(s => {
+    const h = s.categoria !== cat ? `<h3 class="cat">${esc(s.categoria)}</h3>` : ''; cat = s.categoria;
+    return h + `
     <div class="fila ${s.activo ? '' : 'inactivo'}" data-id="${s.id_servicio}">
-      <div><strong>${esc(s.nombre)}</strong><div class="dato">${esc(s.categoria)}</div></div>
+      <div><strong>${esc(s.nombre)}</strong></div>
       <div><label>Precio</label><input type="number" min="0" step="5" class="p" value="${s.precio}"></div>
       <div><label>Precio hasta (opcional)</label><input type="number" min="0" step="5" class="pm" value="${s.precio_max ?? ''}"></div>
       <div><label>Duración (min)</label><input type="number" min="5" step="5" class="d" value="${s.duracion_minutos || 60}"></div>
       <div><label class="chk"><input type="checkbox" class="a" ${s.activo ? 'checked' : ''}> Se ofrece</label><button class="btn peq" style="margin-top:6px" onclick="guardarServicio(this)">Guardar</button></div>
-    </div>`).join('');
+    </div>`; }).join('');
 });
 function guardarServicio(b) {
   const f = b.closest('.fila');
@@ -214,26 +259,38 @@ function guardarServicio(b) {
     f.classList.toggle('inactivo', !f.querySelector('.a').checked); aviso('Guardado');
   });
 }
+function nuevoServicio() {
+  const cats = [...new Set(SERV.map(s => s.categoria))];
+  m.innerHTML = `<h2>Agregar servicio</h2>
+    <label for="n-nom">Nombre del servicio</label><input id="n-nom" maxlength="80">
+    <label for="n-cat">Categoría</label><select id="n-cat">${cats.map(c => `<option>${esc(c)}</option>`).join('')}</select>
+    <div class="dos"><div><label for="n-p">Precio</label><input id="n-p" type="number" min="0" step="5"></div><div><label for="n-pm">Precio hasta (opcional)</label><input id="n-pm" type="number" min="0" step="5"></div></div>
+    <label for="n-d">Duración (minutos)</label><input id="n-d" type="number" min="5" step="5" value="60">
+    <div class="par"><button class="btn sec" onclick="m.close()">Volver</button><button class="btn" id="ok-n">Guardar servicio</button></div>`;
+  m.showModal();
+  $('#ok-n').onclick = () => intentar(async () => {
+    await api('/servicios', 'POST', { nombre: $('#n-nom').value, categoria: $('#n-cat').value, precio: $('#n-p').value, precio_max: $('#n-pm').value, duracion_minutos: $('#n-d').value });
+    m.close(); aviso('Servicio agregado'); cargarServicios();
+  });
+}
 
-// ── Clientes ──
+// Clientes
 const cargarClientes = () => intentar(async () => { CLIENTES = await api('/clientes'); pintarClientes(); });
 $('#q-cli').oninput = () => pintarClientes();
 function pintarClientes() {
   const q = $('#q-cli').value.toLowerCase();
   const L = CLIENTES.filter(c => (c.nombre + ' ' + c.apellido + ' ' + c.email + ' ' + (c.telefono || '')).toLowerCase().includes(q));
-  $('#l-clientes').innerHTML = L.length ? `<table><thead><tr><th>Nombre</th><th>Teléfono</th><th>Correo</th><th>Citas</th><th>Última cita</th><th></th></tr></thead><tbody>${L.map(c => `
-    <tr><td>${esc(c.nombre)} ${esc(c.apellido)}</td><td>${c.telefono ? `<a href="${wa(c.telefono)}" target="_blank" rel="noopener">${esc(c.telefono)}</a>` : '—'}</td><td>${esc(c.email)}</td><td>${c.total_citas}</td><td>${c.ultima_cita ? fecha(c.ultima_cita) : '—'}</td><td><button class="btn mal peq" onclick="borrarCliente(${c.id_usuario})">Eliminar</button></td></tr>`).join('')}</tbody></table>` : '<div class="vacio">No se encontraron clientes.</div>';
+  $('#l-clientes').innerHTML = L.length ? `<div class="tabla"><table><thead><tr><th>Nombre</th><th>Teléfono</th><th>Correo</th><th>Citas</th><th>Última cita</th><th></th></tr></thead><tbody>${L.map(c => `
+    <tr><td>${esc(c.nombre)} ${esc(c.apellido)}</td><td>${c.telefono ? `<a href="${wa(c.telefono)}" target="_blank" rel="noopener">${esc(c.telefono)}</a>` : '—'}</td><td>${esc(c.email)}</td><td>${c.total_citas}</td><td>${c.ultima_cita ? fecha(c.ultima_cita) : '—'}</td><td><button class="btn mal peq" onclick="borrarCliente(${c.id_usuario})">Eliminar</button></td></tr>`).join('')}</tbody></table></div>` : '<div class="vacio">No se encontraron clientes.</div>';
 }
-
 function borrarCliente(id) {
   const c = CLIENTES.find(x => x.id_usuario === id);
   if (confirm(`¿Eliminar a ${c.nombre} ${c.apellido}?\nSe borrarán también sus ${c.total_citas} citas y sus reseñas. Esto no se puede deshacer.`))
     intentar(async () => { await api('/clientes/' + id, 'DELETE'); aviso('Cliente eliminado'); cargarClientes(); });
 }
 
-// ── Contraseña ──
+// Contraseña
 function abrirClave() {
-  const m = $('#m');
   m.innerHTML = `<h2>Cambiar contraseña</h2>
     <label for="c1">Contraseña actual</label><input id="c1" type="password" autocomplete="current-password">
     <label for="c2">Contraseña nueva (mínimo 8 caracteres)</label><input id="c2" type="password" autocomplete="new-password">
@@ -241,7 +298,6 @@ function abrirClave() {
   m.showModal();
   $('#ok-c').onclick = () => intentar(async () => { await api('/password', 'PUT', { actual: $('#c1').value, nueva: $('#c2').value }); m.close(); $('#aviso-clave').classList.add('oculto'); aviso('Contraseña cambiada'); });
 }
-
 if (T) entrar();
 </script>
 </body>
