@@ -68,6 +68,18 @@ router.get('/ocupadas', (req, res) => {
   }
 });
 
+// Traducciones al inglés de los servicios agregados desde el panel (las usa js/i18n.js)
+router.get('/traducciones', (req, res) => {
+  try {
+    const out = {};
+    db.prepare("SELECT nombre, nombre_en FROM servicios WHERE activo = 1 AND nombre_en IS NOT NULL AND nombre_en != ''")
+      .all().forEach(s => { out[s.nombre] = s.nombre_en; });
+    res.json(out);
+  } catch (error) {
+    res.status(500).json({ error: 'Error al obtener traducciones' });
+  }
+});
+
 // Obtener servicios disponibles
 router.get('/servicios', (req, res) => {
   try {

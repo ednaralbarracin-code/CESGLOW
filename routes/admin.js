@@ -77,26 +77,30 @@ router.get('/servicios', (req, res) => {
 });
 
 router.post('/servicios', (req, res) => {
-  const { nombre, categoria, precio, precio_max, duracion_minutos } = req.body || {};
+  const { nombre, nombre_en, categoria, precio, precio_max, duracion_minutos } = req.body || {};
   const n = String(nombre || '').trim().slice(0, 80);
+  const en = String(nombre_en || '').trim().slice(0, 80);
   const p = Number(precio), d = parseInt(duracion_minutos, 10);
   const pm = precio_max === '' || precio_max == null ? null : Number(precio_max);
   if (!n) return err(res, 400, 'Escribe el nombre del servicio');
+  if (!en) return err(res, 400, 'Escribe el nombre del servicio en inglés');
   if (!db.prepare('SELECT 1 FROM servicios WHERE categoria = ?').get(categoria)) return err(res, 400, 'Elige una categoría de la lista');
   if (db.prepare('SELECT 1 FROM servicios WHERE lower(nombre) = lower(?)').get(n)) return err(res, 400, 'Ya existe un servicio con ese nombre');
   if (!(p >= 0) || precio === '' || !(d > 0) || (pm !== null && !(pm >= p))) return err(res, 400, 'Revisa el precio y la duración');
-  db.prepare("INSERT INTO servicios (nombre, descripcion, precio, precio_max, categoria, duracion_minutos, activo) VALUES (?, '', ?, ?, ?, ?, 1)")
-    .run(n, p, pm, categoria, d);
+  db.prepare("INSERT INTO servicios (nombre, nombre_en, descripcion, precio, precio_max, categoria, duracion_minutos, activo) VALUES (?, ?, '', ?, ?, ?, ?, 1)")
+    .run(n, en, p, pm, categoria, d);
   res.status(201).json({ message: 'Servicio agregado' });
 });
 
 router.put('/servicios/:id', (req, res) => {
-  const { precio, precio_max, duracion_minutos, activo } = req.body || {};
+  const { precio, precio_max, duracion_minutos, activo, nombre_en } = req.body || {};
+  const en = typeof nombre_en === 'string' ? nombre_en.trim().slice(0, 80) : null;
+  if (en === '') return err(res, 400, 'El nombre en inglés no puede quedar vacío');
   const p = Number(precio), d = parseInt(duracion_minutos, 10);
   const pm = precio_max === '' || precio_max == null ? null : Number(precio_max);
   if (!(p >= 0) || !(d > 0) || (pm !== null && !(pm >= p))) return err(res, 400, 'Revisa el precio y la duración');
-  const r = db.prepare('UPDATE servicios SET precio = ?, precio_max = ?, duracion_minutos = ?, activo = ? WHERE id_servicio = ?')
-    .run(p, pm, d, activo ? 1 : 0, req.params.id);
+  const r = db.prepare('UPDATE servicios SET precio = ?, precio_max = ?, duracion_minutos = ?, activo = ?, nombre_en = COALESCE(?, nombre_en) WHERE id_servicio = ?')
+    .run(p, pm, d, activo ? 1 : 0, en, req.params.id);
   if (!r.changes) return err(res, 404, 'Servicio no encontrado');
   res.json({ message: 'Servicio actualizado' });
 });
