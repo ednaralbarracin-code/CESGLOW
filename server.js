@@ -79,6 +79,15 @@ app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 app.use(cookieParser());
 app.use(checkSession);
 
+// Dominio(s) donde se muestra el panel de administración (en la raíz del dominio)
+const ADMIN_HOSTS = ['bsc-beautyskincare.com', 'www.bsc-beautyskincare.com'];
+app.use((req, res, next) => {
+  if (ADMIN_HOSTS.includes(req.hostname) && (req.path === '/' || req.path === '/index.html')) {
+    return res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+  }
+  next();
+});
+
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Aplicar rate limit estricto a auth y reseñas
