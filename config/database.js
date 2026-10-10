@@ -71,20 +71,13 @@ function initializeDatabase() {
     )
   `);
 
-  // Horario de atención (lo edita el administrador desde el panel)
-  db.exec(`CREATE TABLE IF NOT EXISTS horarios (
-    dia INTEGER PRIMARY KEY, abierto INTEGER DEFAULT 1,
-    apertura TEXT DEFAULT '08:00', cierre TEXT DEFAULT '19:00')`);
-  if (db.prepare('SELECT COUNT(*) n FROM horarios').get().n === 0) {
-    for (let i = 0; i < 7; i++) db.prepare('INSERT INTO horarios (dia, abierto) VALUES (?, ?)').run(i, i === 0 ? 0 : 1);
-  }
-
-  // Servicios predeterminados: solo se crean si la tabla está vacía (así no se pierden los cambios del panel)
-  if (db.prepare('SELECT COUNT(*) n FROM servicios').get().n === 0) {
-  const insertService = db.prepare(`
+  // Servicios predeterminados: solo se agregan los que falten (por nombre), así no se pierden los precios cambiados desde el panel
+  const existeServicio = db.prepare('SELECT 1 FROM servicios WHERE nombre = ?');
+  const nuevoServicio = db.prepare(`
     INSERT INTO servicios (nombre, descripcion, precio, precio_max, categoria, duracion_minutos, activo)
     VALUES (?, ?, ?, ?, ?, ?, 1)
   `);
+  const insertService = { run: (nombre, ...resto) => { if (!existeServicio.get(nombre)) nuevoServicio.run(nombre, ...resto); } };
 
   // Tratamientos Faciales
   insertService.run('Limpieza facial básica', '', 150, null, 'Tratamientos Faciales', 60);
@@ -102,7 +95,6 @@ function initializeDatabase() {
   insertService.run('Posoperatorio', '', 170, null, 'Tratamientos Corporales', 60);
   insertService.run('Tonificación', '', 180, null, 'Tratamientos Corporales', 60);
   insertService.run('Peelling de algas natural', '', 300, null, 'Tratamientos Corporales', 75);
-  }
 
   // Crear usuario admin predeterminado si no existe
   const adminExists = db.prepare('SELECT * FROM usuarios WHERE email = ?').get('admin@beautysite.com');
