@@ -97,7 +97,8 @@ function initializeDatabase() {
   insertService.run('Tonificación', '', 180, null, 'Tratamientos Corporales', 60);
   insertService.run('Peelling de algas natural', '', 300, null, 'Tratamientos Corporales', 75);
 
-  // Dejar SOLO los servicios de la lista de arriba: los demás se borran (o se apagan si ya tienen citas)
+  // Limpieza de servicios viejos: se hace UNA sola vez (así los servicios que agregues desde el panel no se borran)
+  if (db.pragma('user_version', { simple: true }) < 1) {
   db.prepare(`SELECT id_servicio FROM servicios WHERE nombre NOT IN (${oficiales.map(() => '?').join(',')})`).all(...oficiales).forEach(s => {
     if (db.prepare('SELECT 1 FROM citas WHERE id_servicio = ?').get(s.id_servicio)) {
       db.prepare('UPDATE servicios SET activo = 0 WHERE id_servicio = ?').run(s.id_servicio);
@@ -105,6 +106,8 @@ function initializeDatabase() {
       db.prepare('DELETE FROM servicios WHERE id_servicio = ?').run(s.id_servicio);
     }
   });
+    db.pragma('user_version = 1');
+  }
 
   // Crear usuario admin predeterminado si no existe
   const adminExists = db.prepare('SELECT * FROM usuarios WHERE email = ?').get('admin@beautysite.com');
