@@ -41,6 +41,7 @@ function initializeDatabase() {
   // Agregar columnas nuevas si no existen (para bases de datos existentes)
   try { db.exec('ALTER TABLE servicios ADD COLUMN categoria TEXT DEFAULT "General"'); } catch(e) {}
   try { db.exec('ALTER TABLE servicios ADD COLUMN precio_max REAL'); } catch(e) {}
+  try { db.exec('ALTER TABLE servicios ADD COLUMN nombre_en TEXT'); } catch(e) {} // nombre en inglés (servicios agregados desde el panel)
 
   // Crear tabla de citas
   db.exec(`
