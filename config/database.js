@@ -77,7 +77,8 @@ function initializeDatabase() {
     INSERT INTO servicios (nombre, descripcion, precio, precio_max, categoria, duracion_minutos, activo)
     VALUES (?, ?, ?, ?, ?, ?, 1)
   `);
-  const insertService = { run: (nombre, ...resto) => { if (!existeServicio.get(nombre)) nuevoServicio.run(nombre, ...resto); } };
+  const oficiales = [];
+  const insertService = { run: (nombre, ...resto) => { oficiales.push(nombre); if (!existeServicio.get(nombre)) nuevoServicio.run(nombre, ...resto); } };
 
   // Tratamientos Faciales
   insertService.run('Limpieza facial básica', '', 150, null, 'Tratamientos Faciales', 60);
@@ -95,6 +96,15 @@ function initializeDatabase() {
   insertService.run('Posoperatorio', '', 170, null, 'Tratamientos Corporales', 60);
   insertService.run('Tonificación', '', 180, null, 'Tratamientos Corporales', 60);
   insertService.run('Peelling de algas natural', '', 300, null, 'Tratamientos Corporales', 75);
+
+  // Dejar SOLO los servicios de la lista de arriba: los demás se borran (o se apagan si ya tienen citas)
+  db.prepare(`SELECT id_servicio FROM servicios WHERE nombre NOT IN (${oficiales.map(() => '?').join(',')})`).all(...oficiales).forEach(s => {
+    if (db.prepare('SELECT 1 FROM citas WHERE id_servicio = ?').get(s.id_servicio)) {
+      db.prepare('UPDATE servicios SET activo = 0 WHERE id_servicio = ?').run(s.id_servicio);
+    } else {
+      db.prepare('DELETE FROM servicios WHERE id_servicio = ?').run(s.id_servicio);
+    }
+  });
 
   // Crear usuario admin predeterminado si no existe
   const adminExists = db.prepare('SELECT * FROM usuarios WHERE email = ?').get('admin@beautysite.com');
