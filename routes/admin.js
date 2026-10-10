@@ -76,6 +76,20 @@ router.get('/servicios', (req, res) => {
   res.json(db.prepare('SELECT * FROM servicios ORDER BY id_servicio').all());
 });
 
+router.post('/servicios', (req, res) => {
+  const { nombre, categoria, precio, precio_max, duracion_minutos } = req.body || {};
+  const n = String(nombre || '').trim().slice(0, 80);
+  const p = Number(precio), d = parseInt(duracion_minutos, 10);
+  const pm = precio_max === '' || precio_max == null ? null : Number(precio_max);
+  if (!n) return err(res, 400, 'Escribe el nombre del servicio');
+  if (!db.prepare('SELECT 1 FROM servicios WHERE categoria = ?').get(categoria)) return err(res, 400, 'Elige una categoría de la lista');
+  if (db.prepare('SELECT 1 FROM servicios WHERE lower(nombre) = lower(?)').get(n)) return err(res, 400, 'Ya existe un servicio con ese nombre');
+  if (!(p >= 0) || precio === '' || !(d > 0) || (pm !== null && !(pm >= p))) return err(res, 400, 'Revisa el precio y la duración');
+  db.prepare("INSERT INTO servicios (nombre, descripcion, precio, precio_max, categoria, duracion_minutos, activo) VALUES (?, '', ?, ?, ?, ?, 1)")
+    .run(n, p, pm, categoria, d);
+  res.status(201).json({ message: 'Servicio agregado' });
+});
+
 router.put('/servicios/:id', (req, res) => {
   const { precio, precio_max, duracion_minutos, activo } = req.body || {};
   const p = Number(precio), d = parseInt(duracion_minutos, 10);
