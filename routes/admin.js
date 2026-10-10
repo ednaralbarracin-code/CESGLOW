@@ -73,7 +73,7 @@ router.put('/citas/:id', (req, res) => {
 
 // ── SERVICIOS (precios y duración) ──
 router.get('/servicios', (req, res) => {
-  res.json(db.prepare('SELECT * FROM servicios ORDER BY categoria, id_servicio').all());
+  res.json(db.prepare('SELECT * FROM servicios ORDER BY id_servicio').all());
 });
 
 router.put('/servicios/:id', (req, res) => {
@@ -87,21 +87,6 @@ router.put('/servicios/:id', (req, res) => {
   res.json({ message: 'Servicio actualizado' });
 });
 
-// ── HORARIOS (0 = domingo … 6 = sábado) ──
-router.get('/horarios', (req, res) => {
-  res.json(db.prepare('SELECT * FROM horarios ORDER BY dia').all());
-});
-
-router.put('/horarios', (req, res) => {
-  const lista = Array.isArray(req.body) ? req.body : [];
-  const ok = lista.length === 7 && lista.every(h =>
-    /^\d{2}:\d{2}$/.test(h.apertura) && /^\d{2}:\d{2}$/.test(h.cierre) && (!h.abierto || h.apertura < h.cierre));
-  if (!ok) return err(res, 400, 'Revisa los horarios: la hora de apertura debe ser antes que la de cierre');
-  const up = db.prepare('UPDATE horarios SET abierto = ?, apertura = ?, cierre = ? WHERE dia = ?');
-  db.transaction(() => lista.forEach(h => up.run(h.abierto ? 1 : 0, h.apertura, h.cierre, h.dia)))();
-  res.json({ message: 'Horarios guardados' });
-});
-
 // ── CLIENTES ──
 router.get('/clientes', (req, res) => {
   res.json(db.prepare(`
@@ -110,6 +95,20 @@ router.get('/clientes', (req, res) => {
     FROM usuarios u LEFT JOIN citas c ON c.id_usuario = u.id_usuario
     WHERE u.rol = 'cliente' GROUP BY u.id_usuario ORDER BY u.fecha_creacion DESC
   `).all());
+});
+
+// Eliminar un cliente (se borran también sus citas y reseñas)
+router.delete('/clientes/:id', (req, res) => {
+  const u = db.prepare("SELECT id_usuario FROM usuarios WHERE id_usuario = ? AND rol = 'cliente'").get(req.params.id);
+  if (!u) return err(res, 404, 'Cliente no encontrado');
+  const dias = db.prepare('SELECT DISTINCT substr(fecha_cita, 1, 10) AS d FROM citas WHERE id_usuario = ?').all(u.id_usuario);
+  db.transaction(() => {
+    db.prepare('DELETE FROM resenas WHERE id_usuario = ?').run(u.id_usuario);
+    db.prepare('DELETE FROM citas WHERE id_usuario = ?').run(u.id_usuario);
+    db.prepare('DELETE FROM usuarios WHERE id_usuario = ?').run(u.id_usuario);
+  })();
+  dias.forEach(x => citas.notificar(x.d));
+  res.json({ message: 'Cliente eliminado' });
 });
 
 // ── CAMBIAR CONTRASEÑA ──
