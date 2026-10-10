@@ -1,8 +1,10 @@
 const Database = require('better-sqlite3');
 const path = require('path');
+const fs = require('fs');
 const bcrypt = require('bcryptjs');
 
 const dbPath = process.env.DB_PATH || path.join(__dirname, '..', 'beauty_care.db');
+fs.mkdirSync(path.dirname(dbPath), { recursive: true }); // evita que el servidor se caiga si la carpeta no existe
 const db = new Database(dbPath);
 
 // Inicializar la base de datos con la estructura del archivo SQL
