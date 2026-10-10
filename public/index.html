@@ -8,11 +8,15 @@
     <script>try{if(localStorage.getItem("bscLang")){document.documentElement.classList.add("lang-chosen");}}catch(e){}</script>
     <link rel="stylesheet" href="css/styles.css">
     <style>
-        /* Nuestro Trabajo: las 5 tarjetas en una sola fila (en pantallas grandes) */
+        /* Nuestro Trabajo: las 5 tarjetas en una sola fila, con forma horizontal 4:3 (solo en pantallas grandes) */
         @media (min-width: 1100px) {
-            .work-grid { display: grid !important; grid-template-columns: repeat(5, 1fr) !important; gap: 22px !important; }
-            .work-grid .work-item { height: 260px !important; } /* alto de las tarjetas: cambia 260px si las quieres más grandes o más pequeñas */
-            .work-grid .work-image { height: 100% !important; }
+            .work-grid {
+                display: grid !important; grid-template-columns: repeat(5, 1fr) !important; gap: 16px !important;
+                width: min(1600px, 96vw) !important; max-width: none !important; margin: 0 !important;
+                position: relative; left: 50%; transform: translateX(-50%);
+            }
+            .work-grid .work-item { position: relative !important; height: auto !important; aspect-ratio: 4 / 3 !important; }
+            .work-grid .work-image { position: absolute !important; inset: 0 !important; width: 100% !important; height: 100% !important; }
         }
     </style>
     <link rel="preconnect" href="https://fonts.googleapis.com">
