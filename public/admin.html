@@ -245,7 +245,7 @@ const cargarServicios = () => intentar(async () => {
     const h = s.categoria !== cat ? `<h3 class="cat">${esc(s.categoria)}</h3>` : ''; cat = s.categoria;
     return h + `
     <div class="fila ${s.activo ? '' : 'inactivo'}" data-id="${s.id_servicio}">
-      <div><strong>${esc(s.nombre)}</strong></div>
+      <div><strong>${esc(s.nombre)}</strong>${s.nombre_en ? `<label style="margin-top:8px">Nombre en inglés</label><input class="en" maxlength="80" value="${esc(s.nombre_en)}">` : ''}</div>
       <div><label>Precio</label><input type="number" min="0" step="5" class="p" value="${s.precio}"></div>
       <div><label>Precio hasta (opcional)</label><input type="number" min="0" step="5" class="pm" value="${s.precio_max ?? ''}"></div>
       <div><label>Duración (min)</label><input type="number" min="5" step="5" class="d" value="${s.duracion_minutos || 60}"></div>
@@ -255,7 +255,7 @@ const cargarServicios = () => intentar(async () => {
 function guardarServicio(b) {
   const f = b.closest('.fila');
   intentar(async () => {
-    await api('/servicios/' + f.dataset.id, 'PUT', { precio: f.querySelector('.p').value, precio_max: f.querySelector('.pm').value, duracion_minutos: f.querySelector('.d').value, activo: f.querySelector('.a').checked });
+    await api('/servicios/' + f.dataset.id, 'PUT', { nombre_en: f.querySelector('.en')?.value, precio: f.querySelector('.p').value, precio_max: f.querySelector('.pm').value, duracion_minutos: f.querySelector('.d').value, activo: f.querySelector('.a').checked });
     f.classList.toggle('inactivo', !f.querySelector('.a').checked); aviso('Guardado');
   });
 }
@@ -263,13 +263,14 @@ function nuevoServicio() {
   const cats = [...new Set(SERV.map(s => s.categoria))];
   m.innerHTML = `<h2>Agregar servicio</h2>
     <label for="n-nom">Nombre del servicio</label><input id="n-nom" maxlength="80">
+    <label for="n-en">Nombre en inglés (obligatorio)</label><input id="n-en" maxlength="80" placeholder="Ej: Hydrating facial">
     <label for="n-cat">Categoría</label><select id="n-cat">${cats.map(c => `<option>${esc(c)}</option>`).join('')}</select>
     <div class="dos"><div><label for="n-p">Precio</label><input id="n-p" type="number" min="0" step="5"></div><div><label for="n-pm">Precio hasta (opcional)</label><input id="n-pm" type="number" min="0" step="5"></div></div>
     <label for="n-d">Duración (minutos)</label><input id="n-d" type="number" min="5" step="5" value="60">
     <div class="par"><button class="btn sec" onclick="m.close()">Volver</button><button class="btn" id="ok-n">Guardar servicio</button></div>`;
   m.showModal();
   $('#ok-n').onclick = () => intentar(async () => {
-    await api('/servicios', 'POST', { nombre: $('#n-nom').value, categoria: $('#n-cat').value, precio: $('#n-p').value, precio_max: $('#n-pm').value, duracion_minutos: $('#n-d').value });
+    await api('/servicios', 'POST', { nombre: $('#n-nom').value, nombre_en: $('#n-en').value, categoria: $('#n-cat').value, precio: $('#n-p').value, precio_max: $('#n-pm').value, duracion_minutos: $('#n-d').value });
     m.close(); aviso('Servicio agregado'); cargarServicios();
   });
 }
