@@ -8,6 +8,8 @@ const authRoutes = require('./routes/auth');
 const citasRoutes = require('./routes/citas');
 const resenasRoutes = require('./routes/resenas');
 const adminRoutes = require('./routes/admin');
+const notificacionesRoutes = require('./routes/notificaciones');
+const { iniciarRecordatorios } = require('./services/notificaciones');
 const { checkSession } = require('./middleware/auth');
 
 const app = express();
@@ -83,14 +85,12 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/api/auth/login', limiterAuth);
 app.use('/api/auth/register', limiterAuth);
 app.use('/api/resenas', limiterResenas);
-app.use('/api/admin/login', limiterAuth);
 
 app.use('/api/auth', authRoutes);
 app.use('/api/citas', citasRoutes);
 app.use('/api/resenas', resenasRoutes);
 app.use('/api/admin', adminRoutes);
-
-app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
+app.use('/api/notificaciones', notificacionesRoutes);
 
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
@@ -103,4 +103,5 @@ app.use((err, req, res, next) => {
 
 app.listen(PORT, () => {
   console.log(`Servidor ejecutándose en http://localhost:${PORT}`);
+  iniciarRecordatorios();   // revisa cada 10 min las citas que faltan menos de 24 horas
 });
