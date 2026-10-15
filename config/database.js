@@ -181,6 +181,9 @@ function initializeDatabase() {
   // Administradores: correos separados por coma en la variable de entorno ADMIN_EMAILS.
   // La cuenta debe existir (registrada desde el sitio) antes de reiniciar el servidor.
   const adminEmails = (process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
+  console.log(adminEmails.length
+    ? 'Administradores configurados (ADMIN_EMAILS): ' + adminEmails.join(', ')
+    : 'ADMIN_EMAILS no está configurado: nadie podrá entrar al panel de administración');
   const promover = db.prepare("UPDATE usuarios SET rol = 'admin' WHERE lower(email) = ? AND rol != 'admin'");
   adminEmails.forEach(e => { if (promover.run(e).changes) console.log('Administrador activado:', e); });
 
