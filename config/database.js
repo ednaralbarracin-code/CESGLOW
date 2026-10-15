@@ -170,22 +170,15 @@ function initializeDatabase() {
     sincronizar();
   }
 
-  // SEGURIDAD: ya no se crea un administrador con contraseña conocida (admin@beautysite.com / admin123).
-  // Si esa cuenta existe todavía con la contraseña por defecto, se le quitan los permisos de administrador.
-  const adminViejo = db.prepare('SELECT * FROM usuarios WHERE email = ?').get('admin@beautysite.com');
-  if (adminViejo && adminViejo.rol === 'admin' && bcrypt.compareSync('admin123', adminViejo.password_hash)) {
-    db.prepare("UPDATE usuarios SET rol = 'cliente' WHERE id_usuario = ?").run(adminViejo.id_usuario);
-    console.warn('Se quitaron los permisos de administrador a admin@beautysite.com (usaba la contraseña por defecto).');
+   // Crear usuario admin predeterminado si no existe
+  const adminExists = db.prepare('SELECT * FROM usuarios WHERE email = ?').get('admin@beautysite.com');
+  if (!adminExists) {
+    const hashedPassword = bcrypt.hashSync('admin123', 10);
+    db.prepare(`
+      INSERT INTO usuarios (nombre, apellido, email, telefono, password_hash, rol)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run('Samuel', 'Admin', 'admin@beautysite.com', '3000000000', hashedPassword, 'admin');
   }
-
-  // Administradores: correos separados por coma en la variable de entorno ADMIN_EMAILS.
-  // La cuenta debe existir (registrada desde el sitio) antes de reiniciar el servidor.
-  const adminEmails = (process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
-  const promover = db.prepare("UPDATE usuarios SET rol = 'admin' WHERE lower(email) = ? AND rol != 'admin'");
-  adminEmails.forEach(e => { if (promover.run(e).changes) console.log('Administrador activado:', e); });
-
-  console.log('Base de datos inicializada correctamente');
-}
 
 // Funciones de usuario
 const userQueries = {
