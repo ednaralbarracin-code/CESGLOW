@@ -19,10 +19,23 @@ function fechaValida(f) {
 
 // Solo administradores. El rol se lee de la base de datos en cada petición (no del token),
 // así que quitarle el rol a alguien o borrar su cuenta corta su acceso de inmediato.
+const correosAdmin = () => (process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
+
 function soloAdmin(req, res, next) {
   const id = req.user && (req.user.id || req.user.id_usuario);
   const u = id ? db.prepare('SELECT id_usuario, nombre, apellido, email, rol FROM usuarios WHERE id_usuario = ?').get(id) : null;
+  // Si el correo está en ADMIN_EMAILS (variable de Railway) la cuenta es administradora,
+  // aunque se haya registrado después de que arrancó el servidor: no hace falta reiniciar.
+  if (u && u.rol !== 'admin' && correosAdmin().includes(String(u.email).toLowerCase())) {
+    db.prepare("UPDATE usuarios SET rol = 'admin' WHERE id_usuario = ?").run(u.id_usuario);
+    u.rol = 'admin';
+  }
   if (!u || u.rol !== 'admin') {
+    // Queda en los registros (logs) de Railway para saber por qué no entró
+    if (u) {
+      const n = correosAdmin().length;
+      console.warn(`[admin] acceso denegado a ${u.email}: ADMIN_EMAILS ${n ? 'tiene ' + n + ' correo(s) y ese no está en la lista' : 'está vacío o no existe en este servicio'}`);
+    }
     return res.status(403).json({ error: 'Acceso denegado. Se requiere permisos de administrador.' });
   }
   req.admin = u;
@@ -152,7 +165,7 @@ router.get('/servicios', (req, res) => {
   try {
     res.json(db.prepare(`
       SELECT id_servicio, nombre, categoria, precio, precio_max, duracion_minutos, activo
-      FROM servicios ORDER BY categoria, id_servicio
+      FROM servicios WHERE activo = 1 ORDER BY categoria, id_servicio
     `).all());
   } catch (error) {
     res.status(500).json({ error: 'Error al obtener los servicios' });
