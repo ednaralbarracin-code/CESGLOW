@@ -3,6 +3,7 @@ const router = express.Router();
 const jwt = require('jsonwebtoken');
 const { JWT_SECRET } = require('../middleware/auth');
 const { db } = require('../config/database');
+const notificaciones = require('../services/notificaciones');
 
 // Middleware para verificar token
 function verificarToken(req, res, next) {
@@ -21,16 +22,25 @@ const aMin = (f) => parseInt(f.substr(11, 2), 10) * 60 + parseInt(f.substr(14, 2
 const aHora = (m) => String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0');
 
 // Intervalos ocupados de un día (citas no canceladas, según la duración de cada servicio)
+const hmAMin = (h) => parseInt(h.substr(0, 2), 10) * 60 + parseInt(h.substr(3, 2), 10);
+
+// Intervalos no disponibles de un día: citas no canceladas + bloqueos del administrador.
+// (LEFT JOIN: una cita cuyo servicio ya no existe sigue ocupando su horario, 60 min por defecto)
 function obtenerIntervalos(fecha) {
   const filas = db.prepare(`
     SELECT c.fecha_cita, s.duracion_minutos
-    FROM citas c JOIN servicios s ON c.id_servicio = s.id_servicio
+    FROM citas c LEFT JOIN servicios s ON c.id_servicio = s.id_servicio
     WHERE substr(c.fecha_cita, 1, 10) = ? AND c.estado != 'cancelada'
   `).all(fecha);
-  return filas.map(f => {
+  const citas = filas.map(f => {
     const inicio = aMin(f.fecha_cita);
     return { inicio, fin: inicio + (f.duracion_minutos || 60) };
   });
+  // Bloqueo sin horas = día completo (00:00 a 23:59)
+  const bloqueos = db.prepare('SELECT hora_inicio, hora_fin FROM bloqueos WHERE fecha = ?').all(fecha).map(b =>
+    b.hora_inicio && b.hora_fin ? { inicio: hmAMin(b.hora_inicio), fin: hmAMin(b.hora_fin) } : { inicio: 0, fin: 1439 }
+  );
+  return citas.concat(bloqueos);
 }
 
 // ── Tiempo real (Server-Sent Events) ──
@@ -65,18 +75,6 @@ router.get('/ocupadas', (req, res) => {
     res.json(obtenerIntervalos(fecha).map(i => ({ inicio: aHora(i.inicio), fin: aHora(i.fin) })));
   } catch (error) {
     res.status(500).json({ error: 'Error al obtener horarios ocupados' });
-  }
-});
-
-// Traducciones al inglés de los servicios agregados desde el panel (las usa js/i18n.js)
-router.get('/traducciones', (req, res) => {
-  try {
-    const out = {};
-    db.prepare("SELECT nombre, nombre_en FROM servicios WHERE activo = 1 AND nombre_en IS NOT NULL AND nombre_en != ''")
-      .all().forEach(s => { out[s.nombre] = s.nombre_en; });
-    res.json(out);
-  } catch (error) {
-    res.status(500).json({ error: 'Error al obtener traducciones' });
   }
 });
 
@@ -136,6 +134,12 @@ router.post('/', verificarToken, (req, res) => {
     const ids_cita = crear();
     notificar(fecha);
 
+    // Avisos (campanita, correo, push, WhatsApp) al cliente y al administrador. No bloquea la respuesta.
+    notificaciones.notificarCitaAgendada({
+      id_usuario, fecha, hora: aHora(nuevos[0].inicio), notas,
+      servicios: servicios.map(s => ({ nombre: s.nombre, precio: s.precio })), citaIds: ids_cita
+    }).catch(e => console.error('notificaciones:', e.message));
+
     res.status(201).json({ message: '¡Cita agendada exitosamente!', id_cita: ids_cita[0], ids_cita });
   } catch (error) {
     console.error('Error al crear cita:', error);
@@ -168,6 +172,9 @@ router.put('/:id/cancelar', verificarToken, (req, res) => {
 
     const cita = db.prepare('SELECT * FROM citas WHERE id_cita = ? AND id_usuario = ?').get(id, id_usuario);
     if (!cita) return res.status(404).json({ error: 'Cita no encontrada' });
+    if (!['pendiente', 'confirmada'].includes(cita.estado)) {
+      return res.status(400).json({ error: 'Esta cita ya no se puede cancelar' });
+    }
 
     db.prepare("UPDATE citas SET estado = 'cancelada' WHERE id_cita = ?").run(id);
     notificar(String(cita.fecha_cita).substr(0, 10));
@@ -177,5 +184,7 @@ router.put('/:id/cancelar', verificarToken, (req, res) => {
   }
 });
 
-router.notificar = notificar; // lo usa el panel de administración
+// El panel de administración usa esto para avisar a los navegadores abiertos cuando cambia la agenda
+router.notificar = notificar;
+
 module.exports = router;
