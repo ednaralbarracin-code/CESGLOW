@@ -19,9 +19,17 @@ function fechaValida(f) {
 
 // Solo administradores. El rol se lee de la base de datos en cada petición (no del token),
 // así que quitarle el rol a alguien o borrar su cuenta corta su acceso de inmediato.
+const correosAdmin = () => (process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
+
 function soloAdmin(req, res, next) {
   const id = req.user && (req.user.id || req.user.id_usuario);
   const u = id ? db.prepare('SELECT id_usuario, nombre, apellido, email, rol FROM usuarios WHERE id_usuario = ?').get(id) : null;
+  // Si el correo está en ADMIN_EMAILS (variable de Railway) la cuenta es administradora,
+  // aunque se haya registrado después de que arrancó el servidor: no hace falta reiniciar.
+  if (u && u.rol !== 'admin' && correosAdmin().includes(String(u.email).toLowerCase())) {
+    db.prepare("UPDATE usuarios SET rol = 'admin' WHERE id_usuario = ?").run(u.id_usuario);
+    u.rol = 'admin';
+  }
   if (!u || u.rol !== 'admin') {
     return res.status(403).json({ error: 'Acceso denegado. Se requiere permisos de administrador.' });
   }
