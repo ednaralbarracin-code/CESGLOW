@@ -117,31 +117,57 @@ function initializeDatabase() {
   // Marca para no enviar dos veces el aviso de "falta menos de 24 horas"
   try { db.exec('ALTER TABLE citas ADD COLUMN recordatorio_enviado INTEGER NOT NULL DEFAULT 0'); } catch (e) {}
 
-  // Insertar servicios predeterminados solo si la tabla está vacía
-  // (Antes se borraban y reinsertaban en cada arranque: las citas perdían su servicio y los precios
-  //  editados se perdían. Ahora los precios se editan desde el panel de administración.)
-  if (db.prepare('SELECT COUNT(*) AS n FROM servicios').get().n === 0) {
-    const insertService = db.prepare(`
-      INSERT INTO servicios (nombre, descripcion, precio, precio_max, categoria, duracion_minutos, activo)
-      VALUES (?, ?, ?, ?, ?, ?, 1)
-    `);
-
-    // Tratamientos Faciales
-    insertService.run('Limpieza facial básica', '', 150, null, 'Tratamientos Faciales', 60);
-    insertService.run('Limpieza facial profunda', '', 200, null, 'Tratamientos Faciales', 75);
-    insertService.run('Luxury facial', '', 200, null, 'Tratamientos Faciales', 90);
-    insertService.run('Tratamiento de acné', '', 200, null, 'Tratamientos Faciales', 60);
-    insertService.run('Tratamiento de manchas', '', 200, null, 'Tratamientos Faciales', 60);
-    insertService.run('Rejuvenecimiento', '', 200, null, 'Tratamientos Faciales', 60);
-    insertService.run('Peelling Químico', '', 200, null, 'Tratamientos Faciales', 60);
-    insertService.run('Depilación', 'Precio según área', 40, 200, 'Tratamientos Faciales', 30);
-
-    // Tratamientos Corporales
-    insertService.run('Reductores', '', 180, null, 'Tratamientos Corporales', 60);
-    insertService.run('Celulitis', '', 180, null, 'Tratamientos Corporales', 60);
-    insertService.run('Posoperatorio', '', 170, null, 'Tratamientos Corporales', 60);
-    insertService.run('Tonificación', '', 180, null, 'Tratamientos Corporales', 60);
-    insertService.run('Peelling de algas natural', '', 300, null, 'Tratamientos Corporales', 75);
+  // Lista base de servicios. Se sincroniza UNA sola vez (queda anotado en la tabla "ajustes"):
+  //  - los servicios de esta lista se crean o se actualizan (por nombre, conservando el mismo id para no romper citas)
+  //  - los que no están en la lista se ocultan (activo = 0), sin borrarlos, para que las citas viejas sigan mostrando su servicio
+  // Después de eso los precios se cambian desde el panel de administración y ya no se tocan al reiniciar.
+  // (Para volver a sincronizar con una lista nueva, cambia CATALOGO_VERSION.)
+  db.exec('CREATE TABLE IF NOT EXISTS ajustes (clave TEXT PRIMARY KEY, valor TEXT)');
+  const CATALOGO_VERSION = 'catalogo_servicios_v1';
+  if (!db.prepare('SELECT 1 FROM ajustes WHERE clave = ?').get(CATALOGO_VERSION)) {
+    const catalogo = [
+      // nombre, descripcion, precio, precio_max, categoria, duracion_minutos
+      // Tratamientos Faciales
+      ['Limpieza facial básica', '', 150, null, 'Tratamientos Faciales', 60],
+      ['Limpieza facial profunda', '', 200, null, 'Tratamientos Faciales', 75],
+      ['Luxury facial', '', 200, null, 'Tratamientos Faciales', 90],
+      ['Tratamiento de acné', '', 200, null, 'Tratamientos Faciales', 60],
+      ['Tratamiento de manchas', '', 200, null, 'Tratamientos Faciales', 60],
+      ['Rejuvenecimiento', '', 200, null, 'Tratamientos Faciales', 60],
+      ['Peelling Químico', '', 200, null, 'Tratamientos Faciales', 60],
+      ['Depilación', 'Precio según área', 40, 200, 'Tratamientos Faciales', 30],
+      // Tratamientos Corporales
+      ['Reductores', '', 180, null, 'Tratamientos Corporales', 60],
+      ['Celulitis', '', 180, null, 'Tratamientos Corporales', 60],
+      ['Posoperatorio', '', 170, null, 'Tratamientos Corporales', 60],
+      ['Tonificación', '', 180, null, 'Tratamientos Corporales', 60],
+      ['Peelling de algas natural', '', 300, null, 'Tratamientos Corporales', 75]
+    ];
+    const sincronizar = db.transaction(() => {
+      const buscar = db.prepare('SELECT id_servicio FROM servicios WHERE nombre = ? ORDER BY id_servicio');
+      const actualizar = db.prepare('UPDATE servicios SET descripcion = ?, precio = ?, precio_max = ?, categoria = ?, duracion_minutos = ?, activo = 1 WHERE id_servicio = ?');
+      const insertar = db.prepare(`
+        INSERT INTO servicios (nombre, descripcion, precio, precio_max, categoria, duracion_minutos, activo)
+        VALUES (?, ?, ?, ?, ?, ?, 1)
+      `);
+      const ocultar = db.prepare('UPDATE servicios SET activo = 0 WHERE id_servicio = ?');
+      const nombres = new Set();
+      catalogo.forEach(s => {
+        nombres.add(s[0]);
+        const filas = buscar.all(s[0]);
+        if (!filas.length) {
+          insertar.run(...s);
+        } else {
+          actualizar.run(s[1], s[2], s[3], s[4], s[5], filas[0].id_servicio);
+          filas.slice(1).forEach(f => ocultar.run(f.id_servicio));   // nombres repetidos: se conserva uno
+        }
+      });
+      db.prepare('SELECT id_servicio, nombre FROM servicios').all().forEach(f => {
+        if (!nombres.has(f.nombre)) ocultar.run(f.id_servicio);
+      });
+      db.prepare('INSERT INTO ajustes (clave, valor) VALUES (?, ?)').run(CATALOGO_VERSION, new Date().toISOString());
+    });
+    sincronizar();
   }
 
   // SEGURIDAD: ya no se crea un administrador con contraseña conocida (admin@beautysite.com / admin123).
