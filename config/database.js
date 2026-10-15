@@ -1,10 +1,9 @@
 const Database = require('better-sqlite3');
 const path = require('path');
-const fs = require('fs');
 const bcrypt = require('bcryptjs');
 
+// DB_PATH permite guardar la base en un Volume (si no, se borra en cada despliegue)
 const dbPath = process.env.DB_PATH || path.join(__dirname, '..', 'beauty_care.db');
-fs.mkdirSync(path.dirname(dbPath), { recursive: true }); // evita que el servidor se caiga si la carpeta no existe
 const db = new Database(dbPath);
 
 // Inicializar la base de datos con la estructura del archivo SQL
@@ -41,7 +40,6 @@ function initializeDatabase() {
   // Agregar columnas nuevas si no existen (para bases de datos existentes)
   try { db.exec('ALTER TABLE servicios ADD COLUMN categoria TEXT DEFAULT "General"'); } catch(e) {}
   try { db.exec('ALTER TABLE servicios ADD COLUMN precio_max REAL'); } catch(e) {}
-  try { db.exec('ALTER TABLE servicios ADD COLUMN nombre_en TEXT'); } catch(e) {} // nombre en inglés (servicios agregados desde el panel)
 
   // Crear tabla de citas
   db.exec(`
@@ -72,53 +70,93 @@ function initializeDatabase() {
     )
   `);
 
-  // Servicios predeterminados: solo se agregan los que falten (por nombre), así no se pierden los precios cambiados desde el panel
-  const existeServicio = db.prepare('SELECT 1 FROM servicios WHERE nombre = ?');
-  const nuevoServicio = db.prepare(`
-    INSERT INTO servicios (nombre, descripcion, precio, precio_max, categoria, duracion_minutos, activo)
-    VALUES (?, ?, ?, ?, ?, ?, 1)
+  // Bloqueos de agenda: días completos (sin horas) o rangos de horas
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS bloqueos (
+      id_bloqueo INTEGER PRIMARY KEY AUTOINCREMENT,
+      fecha TEXT NOT NULL,
+      hora_inicio TEXT,
+      hora_fin TEXT,
+      motivo TEXT,
+      fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
   `);
-  const oficiales = [];
-  const insertService = { run: (nombre, ...resto) => { oficiales.push(nombre); if (!existeServicio.get(nombre)) nuevoServicio.run(nombre, ...resto); } };
+  db.exec('CREATE INDEX IF NOT EXISTS idx_bloqueos_fecha ON bloqueos(fecha)');
 
-  // Tratamientos Faciales
-  insertService.run('Limpieza facial básica', '', 150, null, 'Tratamientos Faciales', 60);
-  insertService.run('Limpieza facial profunda', '', 200, null, 'Tratamientos Faciales', 75);
-  insertService.run('Luxury facial', '', 200, null, 'Tratamientos Faciales', 90);
-  insertService.run('Tratamiento de acné', '', 200, null, 'Tratamientos Faciales', 60);
-  insertService.run('Tratamiento de manchas', '', 200, null, 'Tratamientos Faciales', 60);
-  insertService.run('Rejuvenecimiento', '', 200, null, 'Tratamientos Faciales', 60);
-  insertService.run('Peelling Químico', '', 200, null, 'Tratamientos Faciales', 60);
-  insertService.run('Depilación', 'Precio según área', 40, 200, 'Tratamientos Faciales', 30);
+  // Notificaciones dentro de la página (campanita). Una fila por persona que debe verlas.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS notificaciones (
+      id_notificacion INTEGER PRIMARY KEY AUTOINCREMENT,
+      id_usuario INTEGER NOT NULL,
+      tipo TEXT NOT NULL,
+      titulo TEXT NOT NULL,
+      mensaje TEXT NOT NULL,
+      titulo_en TEXT,
+      mensaje_en TEXT,
+      id_cita INTEGER,
+      leida INTEGER NOT NULL DEFAULT 0,
+      fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (id_usuario) REFERENCES usuarios(id_usuario) ON DELETE CASCADE
+    )
+  `);
+  db.exec('CREATE INDEX IF NOT EXISTS idx_notif_usuario ON notificaciones(id_usuario, leida)');
 
-  // Tratamientos Corporales
-  insertService.run('Reductores', '', 180, null, 'Tratamientos Corporales', 60);
-  insertService.run('Celulitis', '', 180, null, 'Tratamientos Corporales', 60);
-  insertService.run('Posoperatorio', '', 170, null, 'Tratamientos Corporales', 60);
-  insertService.run('Tonificación', '', 180, null, 'Tratamientos Corporales', 60);
-  insertService.run('Peelling de algas natural', '', 300, null, 'Tratamientos Corporales', 75);
+  // Dispositivos que activaron las notificaciones push
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS push_suscripciones (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id_usuario INTEGER NOT NULL,
+      endpoint TEXT NOT NULL UNIQUE,
+      p256dh TEXT NOT NULL,
+      auth TEXT NOT NULL,
+      fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (id_usuario) REFERENCES usuarios(id_usuario) ON DELETE CASCADE
+    )
+  `);
 
-  // Limpieza de servicios viejos: se hace UNA sola vez (así los servicios que agregues desde el panel no se borran)
-  if (db.pragma('user_version', { simple: true }) < 1) {
-  db.prepare(`SELECT id_servicio FROM servicios WHERE nombre NOT IN (${oficiales.map(() => '?').join(',')})`).all(...oficiales).forEach(s => {
-    if (db.prepare('SELECT 1 FROM citas WHERE id_servicio = ?').get(s.id_servicio)) {
-      db.prepare('UPDATE servicios SET activo = 0 WHERE id_servicio = ?').run(s.id_servicio);
-    } else {
-      db.prepare('DELETE FROM servicios WHERE id_servicio = ?').run(s.id_servicio);
-    }
-  });
-    db.pragma('user_version = 1');
+  // Marca para no enviar dos veces el aviso de "falta menos de 24 horas"
+  try { db.exec('ALTER TABLE citas ADD COLUMN recordatorio_enviado INTEGER NOT NULL DEFAULT 0'); } catch (e) {}
+
+  // Insertar servicios predeterminados solo si la tabla está vacía
+  // (Antes se borraban y reinsertaban en cada arranque: las citas perdían su servicio y los precios
+  //  editados se perdían. Ahora los precios se editan desde el panel de administración.)
+  if (db.prepare('SELECT COUNT(*) AS n FROM servicios').get().n === 0) {
+    const insertService = db.prepare(`
+      INSERT INTO servicios (nombre, descripcion, precio, precio_max, categoria, duracion_minutos, activo)
+      VALUES (?, ?, ?, ?, ?, ?, 1)
+    `);
+
+    // Tratamientos Faciales
+    insertService.run('Limpieza facial básica', '', 150, null, 'Tratamientos Faciales', 60);
+    insertService.run('Limpieza facial profunda', '', 200, null, 'Tratamientos Faciales', 75);
+    insertService.run('Luxury facial', '', 200, null, 'Tratamientos Faciales', 90);
+    insertService.run('Tratamiento de acné', '', 200, null, 'Tratamientos Faciales', 60);
+    insertService.run('Tratamiento de manchas', '', 200, null, 'Tratamientos Faciales', 60);
+    insertService.run('Rejuvenecimiento', '', 200, null, 'Tratamientos Faciales', 60);
+    insertService.run('Peelling Químico', '', 200, null, 'Tratamientos Faciales', 60);
+    insertService.run('Depilación', 'Precio según área', 40, 200, 'Tratamientos Faciales', 30);
+
+    // Tratamientos Corporales
+    insertService.run('Reductores', '', 180, null, 'Tratamientos Corporales', 60);
+    insertService.run('Celulitis', '', 180, null, 'Tratamientos Corporales', 60);
+    insertService.run('Posoperatorio', '', 170, null, 'Tratamientos Corporales', 60);
+    insertService.run('Tonificación', '', 180, null, 'Tratamientos Corporales', 60);
+    insertService.run('Peelling de algas natural', '', 300, null, 'Tratamientos Corporales', 75);
   }
 
-  // Crear usuario admin predeterminado si no existe
-  const adminExists = db.prepare('SELECT * FROM usuarios WHERE email = ?').get('admin@beautysite.com');
-  if (!adminExists) {
-    const hashedPassword = bcrypt.hashSync('admin123', 10);
-    db.prepare(`
-      INSERT INTO usuarios (nombre, apellido, email, telefono, password_hash, rol)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `).run('Samuel', 'Admin', 'admin@beautysite.com', '3000000000', hashedPassword, 'admin');
+  // SEGURIDAD: ya no se crea un administrador con contraseña conocida (admin@beautysite.com / admin123).
+  // Si esa cuenta existe todavía con la contraseña por defecto, se le quitan los permisos de administrador.
+  const adminViejo = db.prepare('SELECT * FROM usuarios WHERE email = ?').get('admin@beautysite.com');
+  if (adminViejo && adminViejo.rol === 'admin' && bcrypt.compareSync('admin123', adminViejo.password_hash)) {
+    db.prepare("UPDATE usuarios SET rol = 'cliente' WHERE id_usuario = ?").run(adminViejo.id_usuario);
+    console.warn('Se quitaron los permisos de administrador a admin@beautysite.com (usaba la contraseña por defecto).');
   }
+
+  // Administradores: correos separados por coma en la variable de entorno ADMIN_EMAILS.
+  // La cuenta debe existir (registrada desde el sitio) antes de reiniciar el servidor.
+  const adminEmails = (process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
+  const promover = db.prepare("UPDATE usuarios SET rol = 'admin' WHERE lower(email) = ? AND rol != 'admin'");
+  adminEmails.forEach(e => { if (promover.run(e).changes) console.log('Administrador activado:', e); });
 
   console.log('Base de datos inicializada correctamente');
 }
