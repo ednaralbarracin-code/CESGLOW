@@ -60,15 +60,16 @@ router.get('/push/clave', (req, res) => {
 router.post('/push/suscribir', (req, res) => {
   try {
     const { endpoint, keys } = req.body || {};
+    const idioma = (req.body && req.body.idioma) === 'en' ? 'en' : 'es';
     const p256dh = keys && keys.p256dh, auth = keys && keys.auth;
     if (typeof endpoint !== 'string' || !/^https:\/\//.test(endpoint) || endpoint.length > 800 ||
         typeof p256dh !== 'string' || typeof auth !== 'string' || p256dh.length > 200 || auth.length > 100 || !p256dh || !auth) {
       return res.status(400).json({ error: 'Suscripción inválida' });
     }
     db.prepare(`
-      INSERT INTO push_suscripciones (id_usuario, endpoint, p256dh, auth) VALUES (?, ?, ?, ?)
-      ON CONFLICT(endpoint) DO UPDATE SET id_usuario = excluded.id_usuario, p256dh = excluded.p256dh, auth = excluded.auth
-    `).run(req.uid, endpoint, p256dh, auth);
+      INSERT INTO push_suscripciones (id_usuario, endpoint, p256dh, auth, idioma) VALUES (?, ?, ?, ?, ?)
+      ON CONFLICT(endpoint) DO UPDATE SET id_usuario = excluded.id_usuario, p256dh = excluded.p256dh, auth = excluded.auth, idioma = excluded.idioma
+    `).run(req.uid, endpoint, p256dh, auth, idioma);
     // Máximo 10 dispositivos por persona: se conservan los más recientes
     db.prepare(`
       DELETE FROM push_suscripciones WHERE id_usuario = ? AND id NOT IN
