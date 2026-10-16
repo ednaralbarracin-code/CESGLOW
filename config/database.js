@@ -40,6 +40,10 @@ function initializeDatabase() {
   // Agregar columnas nuevas si no existen (para bases de datos existentes)
   try { db.exec('ALTER TABLE servicios ADD COLUMN categoria TEXT DEFAULT "General"'); } catch(e) {}
   try { db.exec('ALTER TABLE servicios ADD COLUMN precio_max REAL'); } catch(e) {}
+  // Nombre, descripción y categoría en inglés (para quien usa la página en English)
+  try { db.exec('ALTER TABLE servicios ADD COLUMN nombre_en TEXT'); } catch(e) {}
+  try { db.exec('ALTER TABLE servicios ADD COLUMN descripcion_en TEXT'); } catch(e) {}
+  try { db.exec('ALTER TABLE servicios ADD COLUMN categoria_en TEXT'); } catch(e) {}
 
   // Crear tabla de citas
   db.exec(`
@@ -117,48 +121,49 @@ function initializeDatabase() {
   // Marca para no enviar dos veces el aviso de "falta menos de 24 horas"
   try { db.exec('ALTER TABLE citas ADD COLUMN recordatorio_enviado INTEGER NOT NULL DEFAULT 0'); } catch (e) {}
 
-  // Lista base de servicios. Se sincroniza UNA sola vez (queda anotado en la tabla "ajustes"):
+  // Lista base de servicios (con su nombre en inglés). Se sincroniza UNA sola vez (queda anotado en "ajustes"):
   //  - los servicios de esta lista se crean o se actualizan (por nombre, conservando el mismo id para no romper citas)
   //  - los que no están en la lista se ocultan (activo = 0), sin borrarlos, para que las citas viejas sigan mostrando su servicio
-  // Después de eso los precios se cambian desde el panel de administración y ya no se tocan al reiniciar.
+  // Después de eso los servicios y precios se manejan desde el panel de administración y ya no se tocan al reiniciar.
   // (Para volver a sincronizar con una lista nueva, cambia CATALOGO_VERSION.)
   db.exec('CREATE TABLE IF NOT EXISTS ajustes (clave TEXT PRIMARY KEY, valor TEXT)');
   const CATALOGO_VERSION = 'catalogo_servicios_v1';
+  const FACIAL = ['Tratamientos Faciales', 'Facial Treatments'];
+  const CORPORAL = ['Tratamientos Corporales', 'Body Treatments'];
+  const catalogo = [
+    // nombre, nombre_en, descripcion, descripcion_en, precio, precio_max, [categoria, categoria_en], duracion_minutos
+    ['Limpieza facial básica', 'Basic facial cleansing', '', '', 150, null, FACIAL, 60],
+    ['Limpieza facial profunda', 'Deep facial cleansing', '', '', 200, null, FACIAL, 75],
+    ['Luxury facial', 'Luxury facial', '', '', 200, null, FACIAL, 90],
+    ['Tratamiento de acné', 'Acne treatment', '', '', 200, null, FACIAL, 60],
+    ['Tratamiento de manchas', 'Dark spot treatment', '', '', 200, null, FACIAL, 60],
+    ['Rejuvenecimiento', 'Rejuvenation', '', '', 200, null, FACIAL, 60],
+    ['Peelling Químico', 'Chemical peel', '', '', 200, null, FACIAL, 60],
+    ['Depilación', 'Waxing', 'Precio según área', 'Price depends on area', 40, 200, FACIAL, 30],
+    ['Reductores', 'Body contouring', '', '', 180, null, CORPORAL, 60],
+    ['Celulitis', 'Cellulite treatment', '', '', 180, null, CORPORAL, 60],
+    ['Posoperatorio', 'Post-surgery care', '', '', 170, null, CORPORAL, 60],
+    ['Tonificación', 'Body toning', '', '', 180, null, CORPORAL, 60],
+    ['Peelling de algas natural', 'Natural seaweed peel', '', '', 300, null, CORPORAL, 75]
+  ];
   if (!db.prepare('SELECT 1 FROM ajustes WHERE clave = ?').get(CATALOGO_VERSION)) {
-    const catalogo = [
-      // nombre, descripcion, precio, precio_max, categoria, duracion_minutos
-      // Tratamientos Faciales
-      ['Limpieza facial básica', '', 150, null, 'Tratamientos Faciales', 60],
-      ['Limpieza facial profunda', '', 200, null, 'Tratamientos Faciales', 75],
-      ['Luxury facial', '', 200, null, 'Tratamientos Faciales', 90],
-      ['Tratamiento de acné', '', 200, null, 'Tratamientos Faciales', 60],
-      ['Tratamiento de manchas', '', 200, null, 'Tratamientos Faciales', 60],
-      ['Rejuvenecimiento', '', 200, null, 'Tratamientos Faciales', 60],
-      ['Peelling Químico', '', 200, null, 'Tratamientos Faciales', 60],
-      ['Depilación', 'Precio según área', 40, 200, 'Tratamientos Faciales', 30],
-      // Tratamientos Corporales
-      ['Reductores', '', 180, null, 'Tratamientos Corporales', 60],
-      ['Celulitis', '', 180, null, 'Tratamientos Corporales', 60],
-      ['Posoperatorio', '', 170, null, 'Tratamientos Corporales', 60],
-      ['Tonificación', '', 180, null, 'Tratamientos Corporales', 60],
-      ['Peelling de algas natural', '', 300, null, 'Tratamientos Corporales', 75]
-    ];
     const sincronizar = db.transaction(() => {
       const buscar = db.prepare('SELECT id_servicio FROM servicios WHERE nombre = ? ORDER BY id_servicio');
-      const actualizar = db.prepare('UPDATE servicios SET descripcion = ?, precio = ?, precio_max = ?, categoria = ?, duracion_minutos = ?, activo = 1 WHERE id_servicio = ?');
+      const actualizar = db.prepare(`UPDATE servicios SET nombre_en = ?, descripcion = ?, descripcion_en = ?, precio = ?, precio_max = ?,
+                                     categoria = ?, categoria_en = ?, duracion_minutos = ?, activo = 1 WHERE id_servicio = ?`);
       const insertar = db.prepare(`
-        INSERT INTO servicios (nombre, descripcion, precio, precio_max, categoria, duracion_minutos, activo)
-        VALUES (?, ?, ?, ?, ?, ?, 1)
+        INSERT INTO servicios (nombre, nombre_en, descripcion, descripcion_en, precio, precio_max, categoria, categoria_en, duracion_minutos, activo)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
       `);
       const ocultar = db.prepare('UPDATE servicios SET activo = 0 WHERE id_servicio = ?');
       const nombres = new Set();
-      catalogo.forEach(s => {
-        nombres.add(s[0]);
-        const filas = buscar.all(s[0]);
+      catalogo.forEach(([nombre, nombreEn, desc, descEn, precio, max, cat, dur]) => {
+        nombres.add(nombre);
+        const filas = buscar.all(nombre);
         if (!filas.length) {
-          insertar.run(...s);
+          insertar.run(nombre, nombreEn, desc, descEn, precio, max, cat[0], cat[1], dur);
         } else {
-          actualizar.run(s[1], s[2], s[3], s[4], s[5], filas[0].id_servicio);
+          actualizar.run(nombreEn, desc, descEn, precio, max, cat[0], cat[1], dur, filas[0].id_servicio);
           filas.slice(1).forEach(f => ocultar.run(f.id_servicio));   // nombres repetidos: se conserva uno
         }
       });
@@ -168,6 +173,21 @@ function initializeDatabase() {
       db.prepare('INSERT INTO ajustes (clave, valor) VALUES (?, ?)').run(CATALOGO_VERSION, new Date().toISOString());
     });
     sincronizar();
+  }
+  // Bases que ya se sincronizaron antes de que existiera el inglés: se rellena SOLO lo que esté vacío
+  // (nunca se pisa un nombre en inglés que el administrador haya escrito).
+  {
+    const rellenar = db.transaction(() => {
+      const enNombre = db.prepare("UPDATE servicios SET nombre_en = ? WHERE nombre = ? AND (nombre_en IS NULL OR nombre_en = '')");
+      const enDesc = db.prepare("UPDATE servicios SET descripcion_en = ? WHERE nombre = ? AND descripcion = ? AND (descripcion_en IS NULL OR descripcion_en = '')");
+      const enCat = db.prepare("UPDATE servicios SET categoria_en = ? WHERE categoria = ? AND (categoria_en IS NULL OR categoria_en = '')");
+      catalogo.forEach(([nombre, nombreEn, desc, descEn, , , cat]) => {
+        enNombre.run(nombreEn, nombre);
+        if (desc && descEn) enDesc.run(descEn, nombre, desc);
+        enCat.run(cat[1], cat[0]);
+      });
+    });
+    rellenar();
   }
 
   // SEGURIDAD: ya no se crea un administrador con contraseña conocida (admin@beautysite.com / admin123).
