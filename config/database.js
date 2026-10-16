@@ -118,6 +118,9 @@ function initializeDatabase() {
     )
   `);
 
+  // Idioma elegido en cada dispositivo (es/en) para enviar el aviso push en ese idioma
+  try { db.exec("ALTER TABLE push_suscripciones ADD COLUMN idioma TEXT NOT NULL DEFAULT 'es'"); } catch (e) {}
+
   // Marca para no enviar dos veces el aviso de "falta menos de 24 horas"
   try { db.exec('ALTER TABLE citas ADD COLUMN recordatorio_enviado INTEGER NOT NULL DEFAULT 0'); } catch (e) {}
   // Marcas separadas para el recordatorio de 24 horas y el de 12 horas antes de la cita
