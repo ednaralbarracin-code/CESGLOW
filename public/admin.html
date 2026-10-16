@@ -117,10 +117,23 @@
         /* ── Precios ── */
         .grupo { margin-bottom: 26px; }
         .grupo h3 { font-family: 'Playfair Display', serif; font-size: 18px; color: var(--peach); margin-bottom: 10px; }
-        .fila-precio { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 12px 16px; display: grid; grid-template-columns: 1fr 120px 120px auto; gap: 12px; align-items: end; margin-bottom: 10px; }
+        .fila-precio { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 12px 16px; display: grid; grid-template-columns: 1fr 110px 110px auto; gap: 12px; align-items: end; margin-bottom: 10px; }
         .fila-precio .nombre { font-weight: 500; align-self: center; }
         .fila-precio .nombre small { display: block; color: var(--muted); font-weight: 400; font-size: 12px; }
         .nota { margin-top: 20px; font-size: 13px; color: var(--muted); background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; }
+
+        .fila-precio .nombre small.falta { color: var(--warn); }
+        .fila-precio .acciones-fila { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+        .fila-oculta { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; background: var(--card); border: 1px dashed var(--border); border-radius: 14px; padding: 10px 16px; margin-bottom: 8px; color: var(--muted); }
+        .fila-oculta small { display: block; font-size: 12px; }
+        details.ocultos { margin-top: 24px; }
+        details.ocultos summary { cursor: pointer; color: var(--muted); margin-bottom: 12px; }
+        .modal.ancha { max-width: 520px; text-align: left; max-height: 92vh; overflow-y: auto; }
+        .modal.ancha h3 { text-align: center; }
+        .modal.ancha .fila2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+        .modal.ancha .campo-sv { margin-bottom: 14px; }
+        .modal.ancha .pista { font-size: 12px; color: var(--muted); margin-top: 4px; }
+        .modal.ancha .botones { margin-top: 18px; }
 
         /* ── Bloqueos ── */
         .form-bloqueo { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 18px; margin-bottom: 24px; display: grid; gap: 14px; }
@@ -151,7 +164,8 @@
             .acciones { justify-content: flex-start; }
             .fila-precio { grid-template-columns: 1fr 1fr; }
             .fila-precio .nombre { grid-column: 1 / -1; }
-            .fila-precio .btn { grid-column: 1 / -1; }
+            .fila-precio .acciones-fila { grid-column: 1 / -1; justify-content: flex-start; }
+            .modal.ancha .fila2 { grid-template-columns: 1fr; }
             .bloq { grid-template-columns: 1fr; }
             .quien { display: none; }
             .barra .item, .barra .item.ancho { max-width: none; flex-basis: 100%; }
@@ -198,7 +212,7 @@
             <nav class="tabs" role="tablist">
                 <button class="tab activa" role="tab" data-tab="citas">Citas</button>
                 <button class="tab" role="tab" data-tab="clientes">Clientes</button>
-                <button class="tab" role="tab" data-tab="precios">Precios</button>
+                <button class="tab" role="tab" data-tab="precios">Servicios</button>
                 <button class="tab" role="tab" data-tab="bloqueos">Bloqueos</button>
             </nav>
         </header>
@@ -249,10 +263,11 @@
                 <div id="lista-clientes"></div>
             </section>
 
-            <!-- PRECIOS -->
+            <!-- SERVICIOS Y PRECIOS -->
             <section id="tab-precios" hidden>
-                <h2 class="titulo">Precios</h2>
-                <p class="ayuda">Cambia el precio de cada servicio. Si un servicio tiene un rango (por ejemplo depilación, según el área), llena también el precio máximo.</p>
+                <h2 class="titulo">Servicios y precios</h2>
+                <p class="ayuda">Agrega servicios nuevos y cambia sus precios y nombres. Cada servicio lleva su nombre en español y en inglés: los clientes que usan la página en English ven el nombre en inglés.</p>
+                <div class="barra"><button class="btn btn-primary" id="btn-nuevo-servicio" type="button">+ Agregar servicio</button></div>
                 <div id="lista-precios"></div>
                 <p class="nota">Estos precios son los de la lista al agendar una cita. Los precios escritos directamente en la página principal (por ejemplo en "Nuestro Trabajo") no cambian desde aquí.</p>
             </section>
@@ -506,6 +521,7 @@
                 var acc = '';
                 if (c.estado === 'pendiente') acc += '<button class="btn btn-sm btn-ok" data-accion="confirmada" data-id="' + c.id_cita + '">Confirmar abono</button>';
                 if (c.estado === 'confirmada') acc += '<button class="btn btn-sm btn-ok" data-accion="completada" data-id="' + c.id_cita + '">Completada</button>';
+                if (c.estado === 'pendiente' || c.estado === 'confirmada') acc += '<button class="btn btn-sm" data-reprogramar="' + c.id_cita + '">Reprogramar</button>';
                 if (c.estado === 'pendiente' || c.estado === 'confirmada') acc += '<button class="btn btn-sm btn-danger" data-accion="cancelada" data-id="' + c.id_cita + '">Cancelar</button>';
                 if (c.estado === 'completada') acc += '<button class="btn btn-sm" data-accion="confirmada" data-id="' + c.id_cita + '">Deshacer</button>';
                 var precio = c.servicio_precio != null
@@ -531,6 +547,51 @@
             });
             cont.innerHTML = html;
         }
+        // Reprogramar: mueve la visita completa a otra fecha y hora (el cliente recibe el aviso)
+        function abrirReprogramar(c) {
+            var velo = document.createElement('div'); velo.className = 'velo';
+            var d = String(c.fecha_cita);
+            velo.innerHTML =
+                '<form class="modal ancha" role="dialog" aria-modal="true" novalidate>' +
+                  '<h3>Reprogramar cita</h3>' +
+                  '<p style="text-align:center;margin-bottom:6px;"><strong>' + esc(nombreCompleto(c)) + '</strong> · ' + esc(c.servicio || 'Servicio') + '</p>' +
+                  '<p style="text-align:center;color:var(--muted);font-size:14px;margin-bottom:16px;">Ahora: ' + esc(fechaLarga(d)) + ', ' + esc(hora12(d.slice(11, 16))) + '</p>' +
+                  '<div class="msg-error" id="rp-error" hidden></div>' +
+                  '<div class="fila2">' +
+                    '<div><label class="campo" for="rp-fecha">Nueva fecha</label><input type="date" id="rp-fecha" min="' + hoyISO() + '" value="' + esc(d.slice(0, 10)) + '"></div>' +
+                    '<div><label class="campo" for="rp-hora">Nueva hora</label><input type="time" id="rp-hora" step="900" value="' + esc(d.slice(11, 16)) + '"></div>' +
+                  '</div>' +
+                  '<p class="pista">Si el cliente reservó varios servicios seguidos, se mueven todos juntos. Se revisa que el horario esté libre y que el día no esté bloqueado.</p>' +
+                  '<div class="botones"><button type="button" class="btn" id="rp-no">Cancelar</button><button type="submit" class="btn btn-primary" id="rp-ok">Reprogramar</button></div>' +
+                '</form>';
+            document.body.appendChild(velo);
+            function cerrar() { document.removeEventListener('keydown', tecla); velo.remove(); }
+            function tecla(ev) { if (ev.key === 'Escape') cerrar(); }
+            document.addEventListener('keydown', tecla);
+            $('#rp-no', velo).addEventListener('click', cerrar);
+            $('#rp-fecha', velo).focus();
+            $('form', velo).addEventListener('submit', async function (ev) {
+                ev.preventDefault();
+                var err = $('#rp-error', velo); err.hidden = true;
+                var fecha = $('#rp-fecha', velo).value, hora = $('#rp-hora', velo).value;
+                if (!fecha || !hora) { err.textContent = 'Elige la fecha y la hora nuevas.'; err.hidden = false; return; }
+                var ok = $('#rp-ok', velo); ok.disabled = true;
+                try {
+                    await api('/citas/' + c.id_cita + '/reprogramar', { method: 'PUT', body: { fecha: fecha, hora: hora } });
+                    cerrar(); aviso('Cita reprogramada. El cliente recibió el aviso.', 'ok', 4500); cargarCitas();
+                } catch (e2) {
+                    ok.disabled = false;
+                    if (e2 instanceof SesionCaducada) { cerrar(); return; }
+                    err.textContent = e2.message; err.hidden = false;
+                }
+            });
+        }
+        $('#lista-citas').addEventListener('click', function (e) {
+            var b = e.target.closest('button[data-reprogramar]');
+            if (!b) return;
+            var c = citasEnPantalla.filter(function (x) { return String(x.id_cita) === b.dataset.reprogramar; })[0];
+            if (c) abrirReprogramar(c);
+        });
         $('#lista-citas').addEventListener('click', async function (e) {
             var b = e.target.closest('button[data-accion]');
             if (!b) return;
@@ -614,45 +675,171 @@
             } catch (err) { b.disabled = false; fallo(err); }
         });
 
-        // ═════════ PRECIOS ═════════
+        // ═════════ SERVICIOS Y PRECIOS ═════════
+        var servicios = [];
         async function cargarPrecios() {
             var cont = $('#lista-precios');
             cont.innerHTML = '<div class="cargando">Cargando servicios…</div>';
-            try {
-                var servicios = await api('/servicios');
-                var grupos = {};
-                servicios.forEach(function (s) { (grupos[s.categoria || 'General'] = grupos[s.categoria || 'General'] || []).push(s); });
-                cont.innerHTML = Object.keys(grupos).map(function (cat) {
-                    return '<div class="grupo"><h3>' + esc(cat) + '</h3>' + grupos[cat].map(function (s) {
+            try { servicios = await api('/servicios'); pintarServicios(); }
+            catch (e) { cont.innerHTML = '<div class="vacio">No se pudieron cargar los servicios.</div>'; fallo(e); }
+        }
+        function pintarServicios() {
+            var cont = $('#lista-precios');
+            var activos = servicios.filter(function (s) { return s.activo; });
+            var ocultos = servicios.filter(function (s) { return !s.activo; });
+            var grupos = {};
+            activos.forEach(function (s) { (grupos[s.categoria || 'General'] = grupos[s.categoria || 'General'] || []).push(s); });
+            var html = Object.keys(grupos).map(function (cat) {
+                var catEn = grupos[cat][0].categoria_en;
+                return '<div class="grupo"><h3>' + esc(cat) + (catEn ? ' <small style="color:var(--muted);font-family:Poppins,sans-serif;font-size:13px;">· ' + esc(catEn) + '</small>' : '') + '</h3>' +
+                    grupos[cat].map(function (s) {
                         return '<div class="fila-precio" data-id="' + s.id_servicio + '" data-precio="' + esc(s.precio) + '" data-max="' + esc(s.precio_max == null ? '' : s.precio_max) + '">' +
-                            '<div class="nombre">' + esc(s.nombre) + '<small>' + (s.duracion_minutos ? esc(s.duracion_minutos) + ' min' : '') + '</small></div>' +
+                            '<div class="nombre">' + esc(s.nombre) +
+                              '<small' + (s.nombre_en ? '' : ' class="falta"') + '>' + (s.nombre_en ? 'EN: ' + esc(s.nombre_en) : 'Sin nombre en inglés (se verá en español)') + ' · ' + esc(s.duracion_minutos) + ' min</small></div>' +
                             '<div><label class="campo">Precio ($)</label><input type="number" min="0" step="1" inputmode="decimal" class="in-precio" value="' + esc(s.precio) + '"></div>' +
                             '<div><label class="campo">Máximo ($, opcional)</label><input type="number" min="0" step="1" inputmode="decimal" class="in-max" value="' + esc(s.precio_max == null ? '' : s.precio_max) + '"></div>' +
-                            '<button class="btn btn-primary btn-sm" disabled>Guardar</button>' +
+                            '<div class="acciones-fila">' +
+                              '<button class="btn btn-primary btn-sm" data-guardar disabled>Guardar</button>' +
+                              '<button class="btn btn-sm" data-editar="' + s.id_servicio + '">Editar</button>' +
+                              '<button class="btn btn-sm btn-danger" data-ocultar="' + s.id_servicio + '">Ocultar</button>' +
+                            '</div>' +
                         '</div>';
                     }).join('') + '</div>';
-                }).join('') || '<div class="vacio">No hay servicios.</div>';
-            } catch (e) { cont.innerHTML = '<div class="vacio">No se pudieron cargar los servicios.</div>'; fallo(e); }
+            }).join('') || '<div class="vacio">No hay servicios. Agrega el primero con el botón de arriba.</div>';
+            if (ocultos.length) {
+                html += '<details class="ocultos"><summary>Servicios ocultos (' + ocultos.length + ')</summary>' + ocultos.map(function (s) {
+                    return '<div class="fila-oculta"><div>' + esc(s.nombre) + '<small>' + esc(s.categoria) + ' · ' + esc(dinero(s.precio)) + '</small></div>' +
+                        '<button class="btn btn-sm" data-restaurar="' + s.id_servicio + '">Mostrar de nuevo</button></div>';
+                }).join('') + '</details>';
+            }
+            cont.innerHTML = html;
         }
         $('#lista-precios').addEventListener('input', function (e) {
             var fila = e.target.closest('.fila-precio'); if (!fila) return;
             var cambio = $('.in-precio', fila).value !== fila.dataset.precio || $('.in-max', fila).value !== fila.dataset.max;
-            $('button', fila).disabled = !cambio;
+            $('[data-guardar]', fila).disabled = !cambio;
         });
+        function servicioPorId(id) { return servicios.filter(function (s) { return String(s.id_servicio) === String(id); })[0]; }
         $('#lista-precios').addEventListener('click', async function (e) {
             var b = e.target.closest('button'); if (!b) return;
-            var fila = b.closest('.fila-precio');
-            var precio = $('.in-precio', fila).value, max = $('.in-max', fila).value;
-            if (precio === '' || isNaN(Number(precio)) || Number(precio) < 0) return aviso('Escribe un precio válido.', 'error');
-            b.disabled = true; b.textContent = 'Guardando…';
-            try {
-                var r = await api('/servicios/' + fila.dataset.id, { method: 'PUT', body: { precio: precio, precio_max: max } });
-                fila.dataset.precio = String(r.precio); fila.dataset.max = r.precio_max == null ? '' : String(r.precio_max);
-                $('.in-precio', fila).value = fila.dataset.precio; $('.in-max', fila).value = fila.dataset.max;
-                aviso('Precio actualizado', 'ok');
-                b.textContent = 'Guardar';
-            } catch (err) { b.disabled = false; b.textContent = 'Guardar'; fallo(err); }
+            if (b.hasAttribute('data-editar')) return abrirFormularioServicio(servicioPorId(b.dataset.editar));
+            if (b.hasAttribute('data-guardar')) {
+                var fila = b.closest('.fila-precio');
+                var precio = $('.in-precio', fila).value, max = $('.in-max', fila).value;
+                if (precio === '' || isNaN(Number(precio)) || Number(precio) < 0) return aviso('Escribe un precio válido.', 'error');
+                b.disabled = true; b.textContent = 'Guardando…';
+                try {
+                    var r = await api('/servicios/' + fila.dataset.id, { method: 'PUT', body: { precio: precio, precio_max: max } });
+                    fila.dataset.precio = String(r.precio); fila.dataset.max = r.precio_max == null ? '' : String(r.precio_max);
+                    $('.in-precio', fila).value = fila.dataset.precio; $('.in-max', fila).value = fila.dataset.max;
+                    var sv = servicioPorId(fila.dataset.id); if (sv) { sv.precio = r.precio; sv.precio_max = r.precio_max; }
+                    aviso('Precio actualizado', 'ok');
+                    b.textContent = 'Guardar';
+                } catch (err) { b.disabled = false; b.textContent = 'Guardar'; fallo(err); }
+                return;
+            }
+            if (b.hasAttribute('data-ocultar')) {
+                var sv2 = servicioPorId(b.dataset.ocultar);
+                var si = await confirmar({
+                    titulo: 'Ocultar servicio',
+                    mensaje: '"' + (sv2 ? sv2.nombre : '') + '" dejará de aparecer al agendar. Las citas que ya existen no se afectan y podrás mostrarlo de nuevo cuando quieras.',
+                    aceptar: 'Sí, ocultar', cancelar: 'Volver', peligro: true
+                });
+                if (!si) return;
+                try { await api('/servicios/' + b.dataset.ocultar, { method: 'PUT', body: { activo: 0 } }); aviso('Servicio oculto', 'ok'); cargarPrecios(); }
+                catch (err) { fallo(err); }
+                return;
+            }
+            if (b.hasAttribute('data-restaurar')) {
+                b.disabled = true;
+                try { await api('/servicios/' + b.dataset.restaurar, { method: 'PUT', body: { activo: 1 } }); aviso('Servicio visible de nuevo', 'ok'); cargarPrecios(); }
+                catch (err) { b.disabled = false; fallo(err); }
+            }
         });
+        $('#btn-nuevo-servicio').addEventListener('click', function () { abrirFormularioServicio(null); });
+
+        // Ventana para agregar o editar un servicio (nombre, descripción y categoría en español e inglés)
+        function categoriasConocidas() {
+            var vistas = {}, lista = [];
+            servicios.forEach(function (s) {
+                var k = String(s.categoria || 'General').toLowerCase();
+                if (!vistas[k]) { vistas[k] = true; lista.push({ es: s.categoria || 'General', en: s.categoria_en || '' }); }
+                else if (s.categoria_en) lista.forEach(function (c) { if (c.es.toLowerCase() === k && !c.en) c.en = s.categoria_en; });
+            });
+            return lista;
+        }
+        function abrirFormularioServicio(s) {
+            var editando = !!s, cats = categoriasConocidas();
+            var velo = document.createElement('div'); velo.className = 'velo';
+            var valCat = editando ? (s.categoria || 'General') : (cats[0] ? cats[0].es : '__otra__');
+            if (editando && !cats.some(function (c) { return c.es === valCat; })) valCat = '__otra__';
+            velo.innerHTML =
+                '<form class="modal ancha" role="dialog" aria-modal="true" novalidate>' +
+                  '<h3>' + (editando ? 'Editar servicio' : 'Agregar servicio') + '</h3>' +
+                  '<div class="msg-error" id="sv-error" hidden></div>' +
+                  '<div class="fila2">' +
+                    '<div><label class="campo" for="sv-nombre">Nombre en español *</label><input type="text" id="sv-nombre" maxlength="100" value="' + esc(editando ? s.nombre : '') + '"></div>' +
+                    '<div><label class="campo" for="sv-nombre-en">Nombre en inglés</label><input type="text" id="sv-nombre-en" maxlength="100" value="' + esc(editando ? s.nombre_en || '' : '') + '"></div>' +
+                  '</div>' +
+                  '<p class="pista" style="margin:-8px 0 14px;">Si dejas el inglés vacío, quien use la página en English verá el nombre en español.</p>' +
+                  '<div class="campo-sv"><label class="campo" for="sv-cat">Categoría</label><select id="sv-cat">' +
+                    cats.map(function (c) { return '<option value="' + esc(c.es) + '"' + (c.es === valCat ? ' selected' : '') + '>' + esc(c.es) + (c.en ? ' · ' + esc(c.en) : '') + '</option>'; }).join('') +
+                    '<option value="__otra__"' + (valCat === '__otra__' ? ' selected' : '') + '>Otra categoría nueva…</option></select></div>' +
+                  '<div class="fila2" id="sv-cat-nueva" hidden>' +
+                    '<div><label class="campo" for="sv-cat-es">Categoría nueva (español)</label><input type="text" id="sv-cat-es" maxlength="60" value="' + esc(editando && valCat === '__otra__' ? s.categoria : '') + '"></div>' +
+                    '<div><label class="campo" for="sv-cat-en">Categoría nueva (inglés)</label><input type="text" id="sv-cat-en" maxlength="60" value="' + esc(editando && valCat === '__otra__' ? s.categoria_en || '' : '') + '"></div>' +
+                  '</div>' +
+                  '<div class="fila2">' +
+                    '<div><label class="campo" for="sv-precio">Precio ($) *</label><input type="number" id="sv-precio" min="0" step="1" inputmode="decimal" value="' + esc(editando ? s.precio : '') + '"></div>' +
+                    '<div><label class="campo" for="sv-max">Precio máximo ($, opcional)</label><input type="number" id="sv-max" min="0" step="1" inputmode="decimal" value="' + esc(editando && s.precio_max != null ? s.precio_max : '') + '"></div>' +
+                  '</div>' +
+                  '<div class="campo-sv"><label class="campo" for="sv-dur">Duración (minutos)</label><input type="number" id="sv-dur" min="5" max="600" step="5" inputmode="numeric" value="' + esc(editando ? s.duracion_minutos : 60) + '"></div>' +
+                  '<div class="fila2">' +
+                    '<div><label class="campo" for="sv-desc">Descripción en español (opcional)</label><input type="text" id="sv-desc" maxlength="200" value="' + esc(editando ? s.descripcion || '' : '') + '"></div>' +
+                    '<div><label class="campo" for="sv-desc-en">Descripción en inglés (opcional)</label><input type="text" id="sv-desc-en" maxlength="200" value="' + esc(editando ? s.descripcion_en || '' : '') + '"></div>' +
+                  '</div>' +
+                  '<div class="botones"><button type="button" class="btn" id="sv-cancelar">Cancelar</button><button type="submit" class="btn btn-primary" id="sv-guardar">' + (editando ? 'Guardar cambios' : 'Agregar servicio') + '</button></div>' +
+                '</form>';
+            document.body.appendChild(velo);
+            var form = $('form', velo);
+            function cerrar() { document.removeEventListener('keydown', tecla); velo.remove(); }
+            function tecla(e) { if (e.key === 'Escape') cerrar(); }
+            document.addEventListener('keydown', tecla);
+            $('#sv-cancelar', velo).addEventListener('click', cerrar);
+            var selCat = $('#sv-cat', velo);
+            function verCategoriaNueva() { $('#sv-cat-nueva', velo).hidden = selCat.value !== '__otra__'; }
+            selCat.addEventListener('change', verCategoriaNueva); verCategoriaNueva();
+            $('#sv-nombre', velo).focus();
+
+            form.addEventListener('submit', async function (ev) {
+                ev.preventDefault();
+                var err = $('#sv-error', velo); err.hidden = true;
+                var otra = selCat.value === '__otra__';
+                var conocida = cats.filter(function (c) { return c.es === selCat.value; })[0];
+                var body = {
+                    nombre: $('#sv-nombre', velo).value, nombre_en: $('#sv-nombre-en', velo).value,
+                    categoria: otra ? $('#sv-cat-es', velo).value : selCat.value,
+                    categoria_en: otra ? $('#sv-cat-en', velo).value : (conocida ? conocida.en : ''),
+                    precio: $('#sv-precio', velo).value, precio_max: $('#sv-max', velo).value,
+                    duracion_minutos: $('#sv-dur', velo).value,
+                    descripcion: $('#sv-desc', velo).value, descripcion_en: $('#sv-desc-en', velo).value
+                };
+                if (!body.nombre.trim()) { err.textContent = 'Escribe el nombre del servicio en español.'; err.hidden = false; return; }
+                if (otra && !body.categoria.trim()) { err.textContent = 'Escribe el nombre de la categoría nueva.'; err.hidden = false; return; }
+                if (body.precio === '' || isNaN(Number(body.precio)) || Number(body.precio) < 0) { err.textContent = 'Escribe un precio válido.'; err.hidden = false; return; }
+                var btn = $('#sv-guardar', velo); btn.disabled = true;
+                try {
+                    var r = await api(editando ? '/servicios/' + s.id_servicio : '/servicios', { method: editando ? 'PUT' : 'POST', body: body });
+                    cerrar();
+                    aviso(editando ? 'Servicio actualizado' : (r.restaurado ? 'Ese servicio estaba oculto: se mostró de nuevo con los datos nuevos' : 'Servicio agregado'), 'ok', 4500);
+                    cargarPrecios();
+                } catch (e2) {
+                    btn.disabled = false;
+                    if (e2 instanceof SesionCaducada) { cerrar(); return; }
+                    err.textContent = e2.message; err.hidden = false;
+                }
+            });
+        }
 
         // ═════════ BLOQUEOS ═════════
         $('#b-fecha').min = hoyISO();
