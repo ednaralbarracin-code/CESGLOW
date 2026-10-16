@@ -86,11 +86,14 @@ function pushActivo() {
 }
 async function enviarPush(idUsuario, payload) {
   if (!pushActivo()) return 0;
-  const subs = db.prepare('SELECT id, endpoint, p256dh, auth FROM push_suscripciones WHERE id_usuario = ?').all(idUsuario);
+  const subs = db.prepare('SELECT id, endpoint, p256dh, auth, idioma FROM push_suscripciones WHERE id_usuario = ?').all(idUsuario);
   let enviados = 0;
   for (const s of subs) {
     try {
-      await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, JSON.stringify(payload), { TTL: 3600 });
+      // Cada dispositivo recibe el aviso en el idioma que eligió en la página (si hay versión en inglés)
+      const en = s.idioma === 'en' && payload.titulo_en && payload.mensaje_en;
+      const cuerpo = { titulo: en ? payload.titulo_en : payload.titulo, mensaje: en ? payload.mensaje_en : payload.mensaje, url: payload.url, tag: payload.tag };
+      await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, JSON.stringify(cuerpo), { TTL: 3600 });
       enviados++;
     } catch (e) {
       // 404/410: el dispositivo ya no existe (desinstaló o revocó el permiso) → se borra
@@ -157,7 +160,7 @@ async function entregar(destino, n) {
   if (destino.id_usuario) { try { guardarNotificacion(destino.id_usuario, n); } catch (e) { console.error('[campanita]', e.message); } }
   const tareas = [];
   if (destino.email && n.correo) tareas.push(enviarCorreo(destino.email, n.correo.asunto, n.correo.html, n.correo.texto));
-  if (destino.id_usuario && n.push) tareas.push(enviarPush(destino.id_usuario, n.push));
+  if (destino.id_usuario && n.push) tareas.push(enviarPush(destino.id_usuario, Object.assign({}, n.push, { titulo: n.titulo, mensaje: n.mensaje, titulo_en: n.titulo_en, mensaje_en: n.mensaje_en })));
   if (destino.telefono && n.whatsapp) tareas.push(enviarWhatsApp(destino.telefono, n.whatsapp.plantilla, n.whatsapp.parametros));
   await Promise.allSettled(tareas);
 }
@@ -179,6 +182,11 @@ function destinosAdmin() {
 
 const nombreDe = (u) => `${u.nombre || ''} ${u.apellido || ''}`.trim();
 const textoServicios = (servicios) => servicios.map(s => s.nombre).join(', ');
+// Nombre en inglés de cada servicio (columna nombre_en); si no tiene, se usa el nombre en español
+const textoServiciosEn = (servicios) => servicios.map(s => {
+  try { const r = db.prepare('SELECT nombre_en FROM servicios WHERE nombre = ?').get(s.nombre); return (r && r.nombre_en) || s.nombre; }
+  catch (e) { return s.nombre; }
+}).join(', ');
 const enlaceWhatsAppNegocio = (texto) => `https://wa.me/${WA_NEGOCIO()}?text=${encodeURIComponent(texto)}`;
 
 // ───────────────── Evento 1: alguien agenda una cita ─────────────────
@@ -197,7 +205,7 @@ async function notificarCitaAgendada({ id_usuario, fecha, hora, servicios, citaI
     (citaIds || []).forEach(id => marcar.run(dentro12 ? 1 : 0, id));
   }
 
-  const nombre = nombreDe(u), lista_ = textoServicios(servicios), h = hora12(hora);
+  const nombre = nombreDe(u), lista_ = textoServicios(servicios), listaEn = textoServiciosEn(servicios), h = hora12(hora);
   const fEs = fechaLarga(fecha, 'es'), fEn = fechaLarga(fecha, 'en');
   const idCita = (citaIds || [])[0];
   const pl = PLANTILLAS();
@@ -209,7 +217,7 @@ async function notificarCitaAgendada({ id_usuario, fecha, hora, servicios, citaI
   };
   const clienteEn = {
     titulo: 'Appointment booked',
-    mensaje: `Your appointment for ${lista_} is booked for ${fEn} at ${h}. To confirm it, send your $50 deposit via WhatsApp.`
+    mensaje: `Your appointment for ${listaEn} is booked for ${fEn} at ${h}. To confirm it, send your $50 deposit via WhatsApp.`
   };
   const tEs = {
     titulo: clienteEs.titulo,
@@ -225,7 +233,7 @@ async function notificarCitaAgendada({ id_usuario, fecha, hora, servicios, citaI
     titulo: clienteEn.titulo,
     lineas: [
       `Hi ${esc(u.nombre)}, your appointment is booked:`,
-      `<strong>Service:</strong> ${esc(lista_)}<br><strong>Date:</strong> ${esc(fEn)}<br><strong>Time:</strong> ${esc(h)}`,
+      `<strong>Service:</strong> ${esc(listaEn)}<br><strong>Date:</strong> ${esc(fEn)}<br><strong>Time:</strong> ${esc(h)}`,
       'To confirm it we need your <strong>$50</strong> deposit. Message us on WhatsApp with your payment method.',
       'Please note: cancelling with less than 24 hours notice means losing the deposit.'
     ],
@@ -325,6 +333,7 @@ async function recordatorioCita(u, filas, horas) {
   const hora = String(filas[0].fecha_cita).slice(11, 16);
   const pendiente = filas.some(f => f.estado === 'pendiente');
   const lista_ = filas.map(f => f.servicio || 'Servicio').join(', ');
+  const listaEn = textoServiciosEn(filas.map(f => ({ nombre: f.servicio || 'Servicio' })));
   const nombre = nombreDe(u), h = hora12(hora);
   const fEs = fechaLarga(fecha, 'es'), fEn = fechaLarga(fecha, 'en');
   const idCita = filas[0].id_cita;
@@ -350,7 +359,7 @@ async function recordatorioCita(u, filas, horas) {
     titulo: `Your appointment is in less than ${horas} hours`,
     lineas: [
       `Hi ${esc(u.nombre)}, a reminder of your appointment:`,
-      `<strong>Service:</strong> ${esc(lista_)}<br><strong>Date:</strong> ${esc(fEn)}<br><strong>Time:</strong> ${esc(h)}`,
+      `<strong>Service:</strong> ${esc(listaEn)}<br><strong>Date:</strong> ${esc(fEn)}<br><strong>Time:</strong> ${esc(h)}`,
       esc(pendiente ? 'We have not received your $50 deposit yet. Message us on WhatsApp to confirm your appointment.' : 'Your appointment is confirmed. See you soon!'),
       'Please note: cancelling with less than 24 hours notice means losing the $50 deposit.'
     ],
@@ -391,12 +400,12 @@ async function recordatorioCita(u, filas, horas) {
 async function notificarCambioCita(evento, d) {
   const u = db.prepare('SELECT id_usuario, nombre, apellido, email, telefono FROM usuarios WHERE id_usuario = ?').get(d.id_usuario);
   if (!u || !d.servicios || !d.servicios.length) return;
-  const nombre = nombreDe(u), lista_ = textoServicios(d.servicios), h = hora12(d.hora);
+  const nombre = nombreDe(u), lista_ = textoServicios(d.servicios), listaEn = textoServiciosEn(d.servicios), h = hora12(d.hora);
   const fEs = fechaLarga(d.fecha, 'es'), fEn = fechaLarga(d.fecha, 'en');
   const idCita = (d.citaIds || [])[0];
   const pl = PLANTILLAS();
   const datosEs = `<strong>Servicio:</strong> ${esc(lista_)}<br><strong>Fecha:</strong> ${esc(fEs)}<br><strong>Hora:</strong> ${esc(h)}`;
-  const datosEn = `<strong>Service:</strong> ${esc(lista_)}<br><strong>Date:</strong> ${esc(fEn)}<br><strong>Time:</strong> ${esc(h)}`;
+  const datosEn = `<strong>Service:</strong> ${esc(listaEn)}<br><strong>Date:</strong> ${esc(fEn)}<br><strong>Time:</strong> ${esc(h)}`;
   const boton = (es, en) => ({
     es: { texto: 'Escribir por WhatsApp', url: enlaceWhatsAppNegocio(es) },
     en: { texto: 'Message us on WhatsApp', url: enlaceWhatsAppNegocio(en) }
@@ -409,7 +418,7 @@ async function notificarCambioCita(evento, d) {
       tipo: 'cita_confirmada', plantilla: pl.clienteConfirmada, params: [u.nombre, fEs, h, lista_],
       tEs: 'Cita confirmada', tEn: 'Appointment confirmed',
       mEs: `Tu cita de ${lista_} del ${fEs} a las ${h} está confirmada. ¡Recibimos tu abono, te esperamos!`,
-      mEn: `Your appointment for ${lista_} on ${fEn} at ${h} is confirmed. We received your deposit, see you soon!`,
+      mEn: `Your appointment for ${listaEn} on ${fEn} at ${h} is confirmed. We received your deposit, see you soon!`,
       lEs: [`Hola ${esc(u.nombre)}, ¡tu cita está confirmada!`, datosEs, 'Recibimos tu abono de <strong>$50</strong>. ¡Te esperamos!', 'Recuerda: cancelar con menos de 24 horas de anticipación implica perder el abono.'],
       lEn: [`Hi ${esc(u.nombre)}, your appointment is confirmed!`, datosEn, 'We received your <strong>$50</strong> deposit. See you soon!', 'Please note: cancelling with less than 24 hours notice means losing the deposit.']
     };
@@ -425,10 +434,10 @@ async function notificarCambioCita(evento, d) {
       tipo: 'cita_cancelada', plantilla: pl.clienteCancelada, params: [u.nombre, fEs, h, lista_],
       tEs: 'Cita cancelada', tEn: 'Appointment cancelled',
       mEs: (porCliente ? `Cancelaste tu cita de ${lista_} del ${fEs} a las ${h}.` : `Tu cita de ${lista_} del ${fEs} a las ${h} fue cancelada.`) + dineroEs,
-      mEn: (porCliente ? `You cancelled your appointment for ${lista_} on ${fEn} at ${h}.` : `Your appointment for ${lista_} on ${fEn} at ${h} was cancelled.`) + dineroEn,
+      mEn: (porCliente ? `You cancelled your appointment for ${listaEn} on ${fEn} at ${h}.` : `Your appointment for ${listaEn} on ${fEn} at ${h} was cancelled.`) + dineroEn,
       lEs: [`Hola ${esc(u.nombre)}, ${porCliente ? 'cancelaste' : 'se canceló'} esta cita:`, datosEs].concat(dineroEs ? [esc(dineroEs.trim())] : []),
       lEn: [`Hi ${esc(u.nombre)}, ${porCliente ? 'you cancelled' : 'we cancelled'} this appointment:`, datosEn].concat(dineroEn ? [esc(dineroEn.trim())] : []),
-      boton: dineroEs ? boton(`Hola, cancelé mi cita en CESGLOW (${lista_}, ${d.fecha} ${h}). Quiero hablar sobre mi abono.`, `Hi, I cancelled my CESGLOW appointment (${lista_}, ${d.fecha} ${h}). I'd like to talk about my deposit.`) : null
+      boton: dineroEs ? boton(`Hola, cancelé mi cita en CESGLOW (${lista_}, ${d.fecha} ${h}). Quiero hablar sobre mi abono.`, `Hi, I cancelled my CESGLOW appointment (${listaEn}, ${d.fecha} ${h}). I'd like to talk about my deposit.`) : null
     };
     if (porCliente) {
       const nota = !d.abonoPagado ? 'Aún no tenía abono confirmado.' : (perdioAbono ? 'Canceló con menos de 24 horas: pierde el abono de $50.' : 'Canceló con 24 horas o más: puede pedir el reembolso del abono.');
@@ -444,7 +453,7 @@ async function notificarCambioCita(evento, d) {
       tipo: 'cita_reprogramada', plantilla: pl.clienteReprogramada, params: [u.nombre, fEs, h, lista_],
       tEs: 'Cita reprogramada', tEn: 'Appointment rescheduled',
       mEs: `Tu cita de ${lista_} se reprogramó para el ${fEs} a las ${h} (antes: ${fAntesEs}, ${hAntes}).`,
-      mEn: `Your appointment for ${lista_} was rescheduled to ${fEn} at ${h} (before: ${fAntesEn}, ${hAntes}).`,
+      mEn: `Your appointment for ${listaEn} was rescheduled to ${fEn} at ${h} (before: ${fAntesEn}, ${hAntes}).`,
       lEs: [`Hola ${esc(u.nombre)}, tu cita se reprogramó:`, datosEs, `Antes era: ${esc(fAntesEs)}, ${esc(hAntes)}.`],
       lEn: [`Hi ${esc(u.nombre)}, your appointment was rescheduled:`, datosEn, `It used to be: ${esc(fAntesEn)}, ${esc(hAntes)}.`]
     };
