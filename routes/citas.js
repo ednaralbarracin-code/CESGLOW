@@ -1,214 +1,219 @@
-// CESGLOW-main/routes/citas.js
 const express = require('express');
 const router = express.Router();
-const db = require('../config/database');
-const { crearNotificacion } = require('../services/notificaciones');
+const jwt = require('jsonwebtoken');
+const { JWT_SECRET } = require('../middleware/auth');
+const { db } = require('../config/database');
+const notificaciones = require('../services/notificaciones');
+const agenda = require('../services/agenda');
 
-// 0. LISTAR TODAS LAS CITAS
-router.get('/', (req, res) => {
-  const query = `
-    SELECT c.*, s.nombre as servicio_nombre, s.nombre_en as servicio_nombre_en, u.nombre as cliente_nombre
-    FROM citas c
-    LEFT JOIN servicios s ON c.servicio_id = s.id
-    LEFT JOIN usuarios u ON c.usuario_id = u.id
-    ORDER BY c.fecha DESC, c.hora DESC
-  `;
-
-  db.all(query, [], (err, rows) => {
-    if (err) return res.status(500).json({ error: 'Error al obtener citas' });
-    res.json(rows || []);
+// Middleware para verificar token
+function verificarToken(req, res, next) {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+  if (!token) return res.status(401).json({ error: 'No autorizado' });
+  jwt.verify(token, JWT_SECRET, (err, user) => {
+    if (err) return res.status(403).json({ error: 'Token inválido' });
+    req.user = user;
+    next();
   });
+}
+
+// ── Utilidades de horario (minutos desde las 00:00) ──
+const aMin = (f) => parseInt(f.substr(11, 2), 10) * 60 + parseInt(f.substr(14, 2), 10);
+const aHora = (m) => String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0');
+
+// Intervalos ocupados de un día (citas no canceladas, según la duración de cada servicio)
+const hmAMin = (h) => parseInt(h.substr(0, 2), 10) * 60 + parseInt(h.substr(3, 2), 10);
+
+// Intervalos no disponibles de un día: citas no canceladas + bloqueos del administrador.
+// (LEFT JOIN: una cita cuyo servicio ya no existe sigue ocupando su horario, 60 min por defecto)
+function obtenerIntervalos(fecha) {
+  const filas = db.prepare(`
+    SELECT c.fecha_cita, s.duracion_minutos
+    FROM citas c LEFT JOIN servicios s ON c.id_servicio = s.id_servicio
+    WHERE substr(c.fecha_cita, 1, 10) = ? AND c.estado != 'cancelada'
+  `).all(fecha);
+  const citas = filas.map(f => {
+    const inicio = aMin(f.fecha_cita);
+    return { inicio, fin: inicio + (f.duracion_minutos || 60) };
+  });
+  // Bloqueo sin horas = día completo (00:00 a 23:59)
+  const bloqueos = db.prepare('SELECT hora_inicio, hora_fin FROM bloqueos WHERE fecha = ?').all(fecha).map(b =>
+    b.hora_inicio && b.hora_fin ? { inicio: hmAMin(b.hora_inicio), fin: hmAMin(b.hora_fin) } : { inicio: 0, fin: 1439 }
+  );
+  return citas.concat(bloqueos);
+}
+
+// ── Tiempo real (Server-Sent Events) ──
+// Cada navegador abierto se conecta aquí y recibe un aviso cuando alguien agenda o cancela una cita.
+const clientes = new Set();
+
+router.get('/eventos', (req, res) => {
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache, no-transform',
+    'Connection': 'keep-alive',
+    'X-Accel-Buffering': 'no'
+  });
+  res.write('retry: 3000\n\n');
+  clientes.add(res);
+  req.on('close', () => clientes.delete(res));
 });
 
-// 1. CREACIÓN DE CITA (Notifica a Cliente y a Admin)
-router.post('/', (req, res) => {
-  const { usuario_id, servicio_id, fecha, hora, notas, nombre_cliente, telefono_cliente, email_cliente } = req.body;
+// Señal periódica para que el proxy no cierre conexiones inactivas
+setInterval(() => clientes.forEach(r => r.write(': ping\n\n')), 25000).unref();
 
-  if (!servicio_id || !fecha || !hora) {
-    return res.status(400).json({ error: 'Servicio, fecha y hora son obligatorios.' });
+function notificar(fecha) {
+  const msg = `event: citas\ndata: ${JSON.stringify({ fecha })}\n\n`;
+  clientes.forEach(r => r.write(msg));
+}
+
+// Horarios ocupados de un día (público): /api/citas/ocupadas?fecha=2025-01-31
+router.get('/ocupadas', (req, res) => {
+  try {
+    const { fecha } = req.query;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha || '')) return res.status(400).json({ error: 'Fecha inválida' });
+    res.json(obtenerIntervalos(fecha).map(i => ({ inicio: aHora(i.inicio), fin: aHora(i.fin) })));
+  } catch (error) {
+    res.status(500).json({ error: 'Error al obtener horarios ocupados' });
   }
-
-  db.get('SELECT nombre, nombre_en FROM servicios WHERE id = ?', [servicio_id], (errServ, serv) => {
-    const nombreServicio = serv ? serv.nombre : 'Servicio CESGLOW';
-    const nombreCliente = nombre_cliente || 'Cliente';
-
-    const insertQuery = `
-      INSERT INTO citas (usuario_id, servicio_id, fecha, hora, notas, nombre_cliente, telefono_cliente, email_cliente, estado, fecha_creacion)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pendiente', datetime('now', 'localtime'))
-    `;
-
-    db.run(
-      insertQuery,
-      [usuario_id || null, servicio_id, fecha, hora, notas || '', nombreCliente, telefono_cliente || '', email_cliente || ''],
-      async function (err) {
-        if (err) {
-          console.error('Error al agendar cita:', err);
-          return res.status(500).json({ error: 'No se pudo agendar la cita.' });
-        }
-
-        const citaId = this.lastID;
-
-        // NOTIFICACIÓN AL CLIENTE (Creación)
-        await crearNotificacion({
-          usuario_id,
-          rol: 'cliente',
-          tipo: 'creacion',
-          titulo: '✨ Cita Solicitada con Éxito',
-          mensaje: `Has agendado tu cita de ${nombreServicio} para el ${fecha} a las ${hora}. Pendiente de confirmación.`,
-          cita_id: citaId
-        });
-
-        // NOTIFICACIÓN AL ADMINISTRADOR (Creación)
-        await crearNotificacion({
-          usuario_id: null,
-          rol: 'admin',
-          tipo: 'creacion',
-          titulo: '📅 ¡Nueva Cita Agendada!',
-          mensaje: `El cliente ${nombreCliente} solicitó una cita para ${nombreServicio} el ${fecha} a las ${hora}.`,
-          cita_id: citaId
-        });
-
-        res.status(201).json({
-          mensaje: 'Cita creada exitosamente con notificaciones enviadas.',
-          citaId
-        });
-      }
-    );
-  });
 });
 
-// 2. CONFIRMACIÓN DE CITA (Admin confirma -> Notifica al Cliente)
-router.put('/:id/confirmar', (req, res) => {
-  const citaId = req.params.id;
-
-  const selectQuery = `
-    SELECT c.*, s.nombre as servicio_nombre
-    FROM citas c
-    LEFT JOIN servicios s ON c.servicio_id = s.id
-    WHERE c.id = ?
-  `;
-
-  db.get(selectQuery, [citaId], (err, cita) => {
-    if (err || !cita) return res.status(404).json({ error: 'Cita no encontrada.' });
-
-    db.run('UPDATE citas SET estado = "confirmada" WHERE id = ?', [citaId], async (updateErr) => {
-      if (updateErr) return res.status(500).json({ error: 'Error al confirmar la cita.' });
-
-      // NOTIFICACIÓN AL CLIENTE (Confirmación)
-      await crearNotificacion({
-        usuario_id: cita.usuario_id,
-        rol: 'cliente',
-        tipo: 'confirmacion',
-        titulo: '✅ ¡Tu Cita ha sido Confirmada!',
-        mensaje: `CESGLOW ha confirmado tu cita de ${cita.servicio_nombre} el ${cita.fecha} a las ${cita.hora}. ¡Te esperamos con gusto!`,
-        cita_id: citaId
-      });
-
-      res.json({ mensaje: 'Cita confirmada exitosamente y notificación enviada al cliente.' });
-    });
-  });
-});
-
-// 3. CANCELACIÓN DE CITA (Notifica a Cliente y a Admin)
-router.put('/:id/cancelar', (req, res) => {
-  const citaId = req.params.id;
-  const { motivo, cancelado_por } = req.body;
-
-  const selectQuery = `
-    SELECT c.*, s.nombre as servicio_nombre, u.nombre as cliente_nombre
-    FROM citas c
-    LEFT JOIN servicios s ON c.servicio_id = s.id
-    LEFT JOIN usuarios u ON c.usuario_id = u.id
-    WHERE c.id = ?
-  `;
-
-  db.get(selectQuery, [citaId], (err, cita) => {
-    if (err || !cita) return res.status(404).json({ error: 'Cita no encontrada.' });
-
-    db.run('UPDATE citas SET estado = "cancelada" WHERE id = ?', [citaId], async (updateErr) => {
-      if (updateErr) return res.status(500).json({ error: 'Error al cancelar la cita.' });
-
-      const clienteNombre = cita.cliente_nombre || cita.nombre_cliente || 'Cliente';
-
-      // NOTIFICACIÓN AL CLIENTE (Cancelación)
-      await crearNotificacion({
-        usuario_id: cita.usuario_id,
-        rol: 'cliente',
-        tipo: 'cancelacion',
-        titulo: '❌ Cita Cancelada',
-        mensaje: `Tu cita para ${cita.servicio_nombre} el ${cita.fecha} a las ${cita.hora} ha sido cancelada.`,
-        cita_id: citaId
-      });
-
-      // NOTIFICACIÓN AL ADMINISTRADOR (Cancelación)
-      await crearNotificacion({
-        usuario_id: null,
-        rol: 'admin',
-        tipo: 'cancelacion',
-        titulo: '⚠️ Cita Cancelada',
-        mensaje: `La cita de ${clienteNombre} para ${cita.servicio_nombre} el ${cita.fecha} a las ${cita.hora} fue cancelada.`,
-        cita_id: citaId
-      });
-
-      res.json({ mensaje: 'Cita cancelada y notificaciones enviadas a cliente y admin.' });
-    });
-  });
-});
-
-// 4. REAGENDACIÓN DE CITA (Notifica a Cliente y a Admin)
-router.put('/:id/reagendar', (req, res) => {
-  const citaId = req.params.id;
-  const { nueva_fecha, nueva_hora } = req.body;
-
-  if (!nueva_fecha || !nueva_hora) {
-    return res.status(400).json({ error: 'Se requiere nueva fecha y nueva hora.' });
+// Obtener servicios disponibles
+router.get('/servicios', (req, res) => {
+  try {
+    const servicios = db.prepare('SELECT * FROM servicios WHERE activo = 1').all();
+    res.json(servicios);
+  } catch (error) {
+    res.status(500).json({ error: 'Error al obtener servicios' });
   }
-
-  const selectQuery = `
-    SELECT c.*, s.nombre as servicio_nombre, u.nombre as cliente_nombre
-    FROM citas c
-    LEFT JOIN servicios s ON c.servicio_id = s.id
-    LEFT JOIN usuarios u ON c.usuario_id = u.id
-    WHERE c.id = ?
-  `;
-
-  db.get(selectQuery, [citaId], (err, cita) => {
-    if (err || !cita) return res.status(404).json({ error: 'Cita no encontrada.' });
-
-    const updateQuery = `
-      UPDATE citas
-      SET fecha = ?, hora = ?, notificado_24h = 0, notificado_12h = 0
-      WHERE id = ?
-    `;
-
-    db.run(updateQuery, [nueva_fecha, nueva_hora, citaId], async (updateErr) => {
-      if (updateErr) return res.status(500).json({ error: 'Error al reagendar la cita.' });
-
-      const clienteNombre = cita.cliente_nombre || cita.nombre_cliente || 'Cliente';
-
-      // NOTIFICACIÓN AL CLIENTE (Reagendación)
-      await crearNotificacion({
-        usuario_id: cita.usuario_id,
-        rol: 'cliente',
-        tipo: 'reagendacion',
-        titulo: '🔄 Cita Reagendada con Éxito',
-        mensaje: `Tu cita para ${cita.servicio_nombre} fue reagendada para el ${nueva_fecha} a las ${nueva_hora}.`,
-        cita_id: citaId
-      });
-
-      // NOTIFICACIÓN AL ADMINISTRADOR (Reagendación)
-      await crearNotificacion({
-        usuario_id: null,
-        rol: 'admin',
-        tipo: 'reagendacion',
-        titulo: '🔄 Cita Reagendada',
-        mensaje: `La cita de ${clienteNombre} (${cita.servicio_nombre}) fue reagendada para el ${nueva_fecha} a las ${nueva_hora}.`,
-        cita_id: citaId
-      });
-
-      res.json({ mensaje: 'Cita reagendada con éxito y alertas enviadas a ambas partes.' });
-    });
-  });
 });
+
+// Crear una cita (uno o varios servicios: se agendan uno tras otro desde la hora elegida)
+router.post('/', verificarToken, (req, res) => {
+  try {
+    const { id_servicio, ids_servicio, fecha_cita, notas } = req.body;
+    const id_usuario = req.user.id || req.user.id_usuario;
+
+    const lista = Array.isArray(ids_servicio) && ids_servicio.length ? ids_servicio : (id_servicio ? [id_servicio] : []);
+    const ids = [...new Set(lista.map(String))];
+
+    if (!ids.length || !fecha_cita) {
+      return res.status(400).json({ error: 'Servicio y fecha son obligatorios' });
+    }
+    if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(fecha_cita)) {
+      return res.status(400).json({ error: 'Fecha inválida' });
+    }
+
+    const servicios = ids.map(id => db.prepare('SELECT * FROM servicios WHERE id_servicio = ? AND activo = 1').get(id));
+    if (servicios.some(s => !s)) {
+      return res.status(400).json({ error: 'Servicio no válido' });
+    }
+
+    const fecha = fecha_cita.substr(0, 10);
+    let inicio = aMin(fecha_cita);
+    const nuevos = servicios.map(s => {
+      const dur = s.duracion_minutos || 60;
+      const item = { servicio: s, inicio, fin: inicio + dur };
+      inicio += dur;
+      return item;
+    });
+
+    // Verificar que ningún tramo choque con citas existentes
+    const ocupados = obtenerIntervalos(fecha);
+    if (nuevos.some(n => ocupados.some(o => n.inicio < o.fin && n.fin > o.inicio))) {
+      return res.status(400).json({ error: 'Ese horario ya no está disponible. Elige otro.' });
+    }
+
+    const insertar = db.prepare(`
+      INSERT INTO citas (id_usuario, id_servicio, fecha_cita, estado, notas)
+      VALUES (?, ?, ?, 'pendiente', ?)
+    `);
+    const crear = db.transaction(() => nuevos.map(n =>
+      insertar.run(id_usuario, n.servicio.id_servicio, `${fecha}T${aHora(n.inicio)}:00`, notas || null).lastInsertRowid
+    ));
+    const ids_cita = crear();
+    notificar(fecha);
+
+    // Avisos (campanita, correo, push, WhatsApp) al cliente y al administrador. No bloquea la respuesta.
+    notificaciones.notificarCitaAgendada({
+      id_usuario, fecha, hora: aHora(nuevos[0].inicio), notas,
+      servicios: servicios.map(s => ({ nombre: s.nombre, precio: s.precio })), citaIds: ids_cita
+    }).catch(e => console.error('notificaciones:', e.message));
+
+    res.status(201).json({ message: '¡Cita agendada exitosamente!', id_cita: ids_cita[0], ids_cita });
+  } catch (error) {
+    console.error('Error al crear cita:', error);
+    res.status(500).json({ error: 'Error al agendar la cita' });
+  }
+});
+
+// Obtener citas del usuario
+router.get('/mis-citas', verificarToken, (req, res) => {
+  try {
+    const id_usuario = req.user.id || req.user.id_usuario;
+    const citas = db.prepare(`
+      SELECT c.*, s.nombre as servicio_nombre, s.precio as servicio_precio, s.duracion_minutos
+      FROM citas c
+      JOIN servicios s ON c.id_servicio = s.id_servicio
+      WHERE c.id_usuario = ?
+      ORDER BY c.fecha_cita DESC
+    `).all(id_usuario);
+    res.json(citas);
+  } catch (error) {
+    res.status(500).json({ error: 'Error al obtener citas' });
+  }
+});
+
+// Cancelar una cita
+router.put('/:id/cancelar', verificarToken, (req, res) => {
+  try {
+    const id_usuario = req.user.id || req.user.id_usuario;
+    const { id } = req.params;
+
+    const cita = db.prepare('SELECT * FROM citas WHERE id_cita = ? AND id_usuario = ?').get(id, id_usuario);
+    if (!cita) return res.status(404).json({ error: 'Cita no encontrada' });
+    if (!['pendiente', 'confirmada'].includes(cita.estado)) {
+      return res.status(400).json({ error: 'Esta cita ya no se puede cancelar' });
+    }
+
+    db.prepare("UPDATE citas SET estado = 'cancelada' WHERE id_cita = ?").run(id);
+    notificar(String(cita.fecha_cita).substr(0, 10));
+
+    // Aviso al cliente (confirmación de la cancelación) y al administrador
+    const srv = db.prepare('SELECT nombre FROM servicios WHERE id_servicio = ?').get(cita.id_servicio);
+    notificaciones.notificarCambioCita('cancelada', {
+      id_usuario, por: 'cliente', abonoPagado: cita.estado === 'confirmada', horasAntes: agenda.horasHasta(cita.fecha_cita),
+      servicios: [{ nombre: srv ? srv.nombre : 'Servicio' }], citaIds: [cita.id_cita],
+      fecha: String(cita.fecha_cita).slice(0, 10), hora: String(cita.fecha_cita).slice(11, 16)
+    }).catch(e => console.error('notificaciones:', e.message));
+    res.json({ message: 'Cita cancelada correctamente' });
+  } catch (error) {
+    res.status(500).json({ error: 'Error al cancelar la cita' });
+  }
+});
+
+// Reprogramar una cita propia (con al menos 24 horas de anticipación; con menos, hay que escribir por WhatsApp)
+router.put('/:id/reprogramar', verificarToken, (req, res) => {
+  try {
+    const id_usuario = req.user.id || req.user.id_usuario;
+    const id = parseInt(req.params.id, 10);
+    if (!Number.isInteger(id)) return res.status(400).json({ error: 'Cita inválida' });
+    const { fecha, hora } = req.body || {};
+    const r = agenda.reprogramarVisita(id, fecha, hora, { idUsuario: id_usuario, minHorasAntes: 24 });
+    if (r.error) return res.status(r.status).json({ error: r.error });
+    notificar(r.datos.fechaAnterior);
+    notificar(r.datos.fecha);
+    notificaciones.notificarCambioCita('reprogramada', Object.assign({ por: 'cliente' }, r.datos))
+      .catch(e => console.error('notificaciones:', e.message));
+    res.json({ message: 'Cita reprogramada', fecha: r.datos.fecha, hora: r.datos.hora });
+  } catch (error) {
+    console.error('citas/reprogramar:', error);
+    res.status(500).json({ error: 'Error al reprogramar la cita' });
+  }
+});
+
+// El panel de administración usa esto para avisar a los navegadores abiertos cuando cambia la agenda
+router.notificar = notificar;
 
 module.exports = router;
