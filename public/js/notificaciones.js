@@ -269,7 +269,7 @@
           // El navegador ya tiene su suscripción: se vuelve a registrar a nombre de la persona que tiene la sesión abierta.
           // Así, si en este mismo navegador entró antes otra cuenta (p. ej. el admin), los avisos pasan a la cuenta actual.
           var j = sub.toJSON();
-          return api('/push/suscribir', { method: 'POST', body: { endpoint: j.endpoint, keys: j.keys } });
+          return api('/push/suscribir', { method: 'POST', body: { endpoint: j.endpoint, keys: j.keys, idioma: lang() } });
         });
       }).catch(function () {});
       return;
@@ -319,7 +319,7 @@
         });
       }).then(function (sub) {
         var j = sub.toJSON();
-        return api('/push/suscribir', { method: 'POST', body: { endpoint: j.endpoint, keys: j.keys } }).then(function (res) { if (!res.ok) throw new Error('no se guardó'); });
+        return api('/push/suscribir', { method: 'POST', body: { endpoint: j.endpoint, keys: j.keys, idioma: lang() } }).then(function (res) { if (!res.ok) throw new Error('no se guardó'); });
       });
     });
   }
@@ -333,7 +333,17 @@
 
   // ───────── ciclo ─────────
   montar();
-  window.addEventListener('bsc:languagechange', function () { if (!host.hidden) { pintar(); if (abierto) pintarPie(); } });
+  window.addEventListener('bsc:languagechange', function () {
+    if (!host.hidden) { pintar(); if (abierto) pintarPie(); }
+    // Si este dispositivo ya recibe avisos, se actualiza el idioma en el servidor
+    if (token() && soportaPush() && Notification.permission === 'granted') {
+      suscripcionActual().then(function (sub) {
+        if (!sub) return;
+        var j = sub.toJSON();
+        return api('/push/suscribir', { method: 'POST', body: { endpoint: j.endpoint, keys: j.keys, idioma: lang() } });
+      }).catch(function () {});
+    }
+  });
 
   var ultimoSondeo = 0;
   function ciclo() {
