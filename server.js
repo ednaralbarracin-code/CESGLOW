@@ -112,3 +112,5 @@ app.listen(PORT, () => {
   console.log(`Servidor ejecutándose en http://localhost:${PORT}`);
   iniciarRecordatorios();   // revisa cada 10 min las citas que faltan menos de 24 horas
 });
+iniciarMonitoreoAlertas();
+});
