@@ -1,264 +1,339 @@
-const express = require('express');
-const router = express.Router();
-const { authenticateToken } = require('../middleware/auth');
-const { db } = require('../config/database');
-const citasRouter = require('./citas');   // se usa para avisar a los navegadores abiertos (tiempo real)
-
-const ESTADOS = ['pendiente', 'confirmada', 'completada', 'cancelada'];
-const RE_FECHA = /^\d{4}-\d{2}-\d{2}$/;
-const RE_HORA = /^([01]\d|2[0-3]):[0-5]\d$/;
-
-const hmAMin = (h) => parseInt(h.slice(0, 2), 10) * 60 + parseInt(h.slice(3, 5), 10);
-const fechaMin = (f) => parseInt(String(f).slice(11, 13), 10) * 60 + parseInt(String(f).slice(14, 16), 10);
-
-function fechaValida(f) {
-  if (!RE_FECHA.test(f || '')) return false;
-  const d = new Date(f + 'T00:00:00Z');
-  return !isNaN(d) && d.toISOString().slice(0, 10) === f;
-}
-
-// Solo administradores. El rol se lee de la base de datos en cada petición (no del token),
-// así que quitarle el rol a alguien o borrar su cuenta corta su acceso de inmediato.
-const correosAdmin = () => (process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
-
-function soloAdmin(req, res, next) {
-  const id = req.user && (req.user.id || req.user.id_usuario);
-  const u = id ? db.prepare('SELECT id_usuario, nombre, apellido, email, rol FROM usuarios WHERE id_usuario = ?').get(id) : null;
-  // Si el correo está en ADMIN_EMAILS (variable de Railway) la cuenta es administradora,
-  // aunque se haya registrado después de que arrancó el servidor: no hace falta reiniciar.
-  if (u && u.rol !== 'admin' && correosAdmin().includes(String(u.email).toLowerCase())) {
-    db.prepare("UPDATE usuarios SET rol = 'admin' WHERE id_usuario = ?").run(u.id_usuario);
-    u.rol = 'admin';
-  }
-  if (!u || u.rol !== 'admin') {
-    return res.status(403).json({ error: 'Acceso denegado. Se requiere permisos de administrador.' });
-  }
-  req.admin = u;
-  next();
-}
-
-router.use((req, res, next) => { res.setHeader('Cache-Control', 'no-store'); next(); });
-router.use(authenticateToken, soloAdmin);
-
-// ── Quién soy (la página lo usa para saber si la sesión sirve como administrador) ──
-router.get('/yo', (req, res) => {
-  res.json({ nombre: req.admin.nombre, apellido: req.admin.apellido, email: req.admin.email });
+// CESGLOW-main/public/admin.js
+document.addEventListener('DOMContentLoaded', () => {
+  initTabs();
+  cargarCitas();
+  cargarServicios();
+  cargarHistorialNotificaciones();
 });
 
-// ── CITAS ─────────────────────────────────────────────────
-// /api/admin/citas?desde=2026-10-01&hasta=2026-10-31&estado=pendiente&orden=asc
-router.get('/citas', (req, res) => {
-  try {
-    const { desde, hasta, estado, orden } = req.query;
-    const where = [];
-    const params = [];
-    if (desde) {
-      if (!fechaValida(desde)) return res.status(400).json({ error: 'Fecha "desde" inválida' });
-      where.push('substr(c.fecha_cita, 1, 10) >= ?'); params.push(desde);
-    }
-    if (hasta) {
-      if (!fechaValida(hasta)) return res.status(400).json({ error: 'Fecha "hasta" inválida' });
-      where.push('substr(c.fecha_cita, 1, 10) <= ?'); params.push(hasta);
-    }
-    if (estado) {
-      if (!ESTADOS.includes(estado)) return res.status(400).json({ error: 'Estado inválido' });
-      where.push('c.estado = ?'); params.push(estado);
-    }
-    const dir = orden === 'desc' ? 'DESC' : 'ASC';
-    const filas = db.prepare(`
-      SELECT c.id_cita, c.fecha_cita, c.estado, c.notas, c.fecha_solicitud,
-             u.id_usuario, u.nombre, u.apellido, u.email, u.telefono,
-             s.nombre AS servicio, s.precio AS servicio_precio, s.precio_max AS servicio_precio_max, s.duracion_minutos
-      FROM citas c
-      LEFT JOIN usuarios u ON u.id_usuario = c.id_usuario
-      LEFT JOIN servicios s ON s.id_servicio = c.id_servicio
-      ${where.length ? 'WHERE ' + where.join(' AND ') : ''}
-      ORDER BY c.fecha_cita ${dir}
-      LIMIT 500
-    `).all(...params);
-    res.json(filas);
-  } catch (error) {
-    console.error('admin/citas:', error);
-    res.status(500).json({ error: 'Error al obtener las citas' });
-  }
-});
+// 1. MANEJO DE PESTAÑAS
+function initTabs() {
+  const tabBtns = document.querySelectorAll('.tab-btn');
+  const tabContents = document.querySelectorAll('.tab-content');
 
-// Cambiar el estado de una cita: pendiente, confirmada, completada o cancelada
-router.put('/citas/:id/estado', (req, res) => {
-  try {
-    const id = parseInt(req.params.id, 10);
-    const { estado } = req.body || {};
-    if (!Number.isInteger(id)) return res.status(400).json({ error: 'Cita inválida' });
-    if (!ESTADOS.includes(estado)) return res.status(400).json({ error: 'Estado inválido' });
+  tabBtns.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      tabBtns.forEach((b) => b.classList.remove('active'));
+      tabContents.forEach((c) => c.classList.remove('active'));
 
-    const cita = db.prepare('SELECT id_cita, fecha_cita FROM citas WHERE id_cita = ?').get(id);
-    if (!cita) return res.status(404).json({ error: 'Cita no encontrada' });
-
-    db.prepare('UPDATE citas SET estado = ? WHERE id_cita = ?').run(estado, id);
-    citasRouter.notificar(String(cita.fecha_cita).slice(0, 10));
-    res.json({ message: 'Estado actualizado', estado });
-  } catch (error) {
-    console.error('admin/citas/estado:', error);
-    res.status(500).json({ error: 'Error al actualizar la cita' });
-  }
-});
-
-// ── CLIENTES ──────────────────────────────────────────────
-router.get('/clientes', (req, res) => {
-  try {
-    const clientes = db.prepare(`
-      SELECT u.id_usuario, u.nombre, u.apellido, u.email, u.telefono, u.rol, u.fecha_creacion,
-             (SELECT COUNT(*) FROM citas c WHERE c.id_usuario = u.id_usuario) AS total_citas
-      FROM usuarios u
-      ORDER BY u.fecha_creacion DESC, u.id_usuario DESC
-    `).all();
-    res.json(clientes);
-  } catch (error) {
-    console.error('admin/clientes:', error);
-    res.status(500).json({ error: 'Error al obtener los clientes' });
-  }
-});
-
-// Borrar la cuenta de un cliente (cuando lo solicita): también sus citas y su reseña
-router.delete('/clientes/:id', (req, res) => {
-  try {
-    const id = parseInt(req.params.id, 10);
-    if (!Number.isInteger(id)) return res.status(400).json({ error: 'Cliente inválido' });
-    if (id === req.admin.id_usuario) {
-      return res.status(400).json({ error: 'No puedes borrar tu propia cuenta de administrador' });
-    }
-    const cliente = db.prepare('SELECT id_usuario, rol FROM usuarios WHERE id_usuario = ?').get(id);
-    if (!cliente) return res.status(404).json({ error: 'Cliente no encontrado' });
-    if (cliente.rol === 'admin') {
-      return res.status(403).json({ error: 'No se puede borrar una cuenta de administrador' });
-    }
-
-    // Días con citas activas de este cliente: se liberan horarios, hay que avisar a los navegadores abiertos
-    const fechas = db.prepare("SELECT DISTINCT substr(fecha_cita, 1, 10) AS f FROM citas WHERE id_usuario = ? AND estado != 'cancelada'")
-      .all(id).map(r => r.f);
-
-    const borrar = db.transaction(() => {
-      const citas = db.prepare('DELETE FROM citas WHERE id_usuario = ?').run(id).changes;
-      const resenas = db.prepare('DELETE FROM resenas WHERE id_usuario = ?').run(id).changes;
-      db.prepare('DELETE FROM notificaciones WHERE id_usuario = ?').run(id);
-      db.prepare('DELETE FROM push_suscripciones WHERE id_usuario = ?').run(id);
-      db.prepare('DELETE FROM usuarios WHERE id_usuario = ?').run(id);
-      return { citas, resenas };
+      btn.classList.add('active');
+      const targetTab = document.getElementById(btn.dataset.tab);
+      if (targetTab) targetTab.classList.add('active');
     });
-    const r = borrar();
-    fechas.forEach(f => citasRouter.notificar(f));
+  });
+}
 
-    res.json({ message: 'Cuenta eliminada', citas_borradas: r.citas, resenas_borradas: r.resenas });
-  } catch (error) {
-    console.error('admin/clientes delete:', error);
-    res.status(500).json({ error: 'Error al borrar la cuenta' });
+// 2. GESTIÓN DE SERVICIOS BILINGÜES
+function abrirModalNuevoServicio() {
+  document.getElementById('modal-servicio-titulo').textContent = 'Agregar Nuevo Servicio (Bilingüe)';
+  document.getElementById('servicio-id').value = '';
+  document.getElementById('servicio-nombre-es').value = '';
+  document.getElementById('servicio-nombre-en').value = '';
+  document.getElementById('servicio-desc-es').value = '';
+  document.getElementById('servicio-desc-en').value = '';
+  document.getElementById('servicio-categoria').value = 'facial';
+  document.getElementById('servicio-precio').value = '65';
+  document.getElementById('servicio-duracion').value = '60';
+  document.getElementById('servicio-imagen').value = '/images/serv_fac1.jpg';
+  document.getElementById('servicio-activo').checked = true;
+
+  document.getElementById('modal-servicio').style.display = 'flex';
+}
+
+function cerrarModalServicio() {
+  document.getElementById('modal-servicio').style.display = 'none';
+}
+
+async function guardarServicio(e) {
+  e.preventDefault();
+
+  const id = document.getElementById('servicio-id').value;
+  const nombre_es = document.getElementById('servicio-nombre-es').value.trim();
+  const nombre_en = document.getElementById('servicio-nombre-en').value.trim();
+  const descripcion_es = document.getElementById('servicio-desc-es').value.trim();
+  const descripcion_en = document.getElementById('servicio-desc-en').value.trim();
+  const categoria = document.getElementById('servicio-categoria').value;
+  const precio = parseFloat(document.getElementById('servicio-precio').value);
+  const duracion = parseInt(document.getElementById('servicio-duracion').value, 10);
+  const imagen = document.getElementById('servicio-imagen').value.trim() || '/images/serv_fac1.jpg';
+  const activo = document.getElementById('servicio-activo').checked;
+
+  if (!nombre_es || !nombre_en) {
+    alert('Por favor introduce el nombre del servicio tanto en Español como en Inglés.');
+    return;
   }
-});
 
-// ── PRECIOS ───────────────────────────────────────────────
-router.get('/servicios', (req, res) => {
+  const payload = {
+    nombre_es,
+    nombre_en,
+    descripcion_es,
+    descripcion_en,
+    categoria,
+    precio,
+    duracion,
+    imagen,
+    activo
+  };
+
   try {
-    res.json(db.prepare(`
-      SELECT id_servicio, nombre, categoria, precio, precio_max, duracion_minutos, activo
-      FROM servicios WHERE activo = 1 ORDER BY categoria, id_servicio
-    `).all());
-  } catch (error) {
-    res.status(500).json({ error: 'Error al obtener los servicios' });
-  }
-});
+    const url = id ? `/api/admin/servicios/${id}` : '/api/admin/servicios';
+    const method = id ? 'PUT' : 'POST';
 
-router.put('/servicios/:id', (req, res) => {
-  try {
-    const id = parseInt(req.params.id, 10);
-    if (!Number.isInteger(id)) return res.status(400).json({ error: 'Servicio inválido' });
+    const res = await fetch(url, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
 
-    const precio = Number(req.body && req.body.precio);
-    if (!Number.isFinite(precio) || precio < 0 || precio > 100000) {
-      return res.status(400).json({ error: 'Precio inválido' });
-    }
-    let precioMax = req.body.precio_max;
-    if (precioMax === '' || precioMax === null || precioMax === undefined) {
-      precioMax = null;
-    } else {
-      precioMax = Number(precioMax);
-      if (!Number.isFinite(precioMax) || precioMax < precio || precioMax > 100000) {
-        return res.status(400).json({ error: 'El precio máximo debe ser mayor o igual al precio' });
-      }
-    }
-
-    const r = db.prepare('UPDATE servicios SET precio = ?, precio_max = ? WHERE id_servicio = ?').run(precio, precioMax, id);
-    if (!r.changes) return res.status(404).json({ error: 'Servicio no encontrado' });
-    res.json({ message: 'Precio actualizado', precio, precio_max: precioMax });
-  } catch (error) {
-    console.error('admin/servicios:', error);
-    res.status(500).json({ error: 'Error al actualizar el precio' });
-  }
-});
-
-// ── BLOQUEOS (días y horarios cerrados) ───────────────────
-router.get('/bloqueos', (req, res) => {
-  try {
-    const ayer = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
-    res.json(db.prepare(`
-      SELECT id_bloqueo, fecha, hora_inicio, hora_fin, motivo
-      FROM bloqueos WHERE fecha >= ? ORDER BY fecha, hora_inicio
-    `).all(ayer));
-  } catch (error) {
-    res.status(500).json({ error: 'Error al obtener los bloqueos' });
-  }
-});
-
-router.post('/bloqueos', (req, res) => {
-  try {
-    const { fecha, hora_inicio, hora_fin } = req.body || {};
-    const motivo = typeof req.body.motivo === 'string' ? req.body.motivo.trim().slice(0, 200) : '';
-    if (!fechaValida(fecha)) return res.status(400).json({ error: 'Fecha inválida' });
-
-    // Sin horas = día completo; con horas = rango (se necesitan las dos)
-    const conHoras = !!(hora_inicio || hora_fin);
-    let ini = 0, fin = 1439;
-    if (conHoras) {
-      if (!RE_HORA.test(hora_inicio || '') || !RE_HORA.test(hora_fin || '')) {
-        return res.status(400).json({ error: 'Indica la hora de inicio y la de fin (formato HH:MM)' });
-      }
-      ini = hmAMin(hora_inicio); fin = hmAMin(hora_fin);
-      if (ini >= fin) return res.status(400).json({ error: 'La hora de inicio debe ser anterior a la de fin' });
+    if (!res.ok) {
+      const errData = await res.json();
+      throw new Error(errData.error || 'Error al guardar el servicio');
     }
 
-    // Citas activas que ya están dentro de ese rango (no se cancelan solas: se avisa al dueño)
-    const citas = db.prepare(`
-      SELECT c.fecha_cita, s.duracion_minutos
-      FROM citas c LEFT JOIN servicios s ON s.id_servicio = c.id_servicio
-      WHERE substr(c.fecha_cita, 1, 10) = ? AND c.estado != 'cancelada'
-    `).all(fecha);
-    const afectadas = citas.filter(c => {
-      const i = fechaMin(c.fecha_cita);
-      const f = i + (c.duracion_minutos || 60);
-      return i < fin && f > ini;
-    }).length;
-
-    const r = db.prepare('INSERT INTO bloqueos (fecha, hora_inicio, hora_fin, motivo) VALUES (?, ?, ?, ?)')
-      .run(fecha, conHoras ? hora_inicio : null, conHoras ? hora_fin : null, motivo || null);
-    citasRouter.notificar(fecha);
-    res.status(201).json({ message: 'Bloqueo creado', id_bloqueo: Number(r.lastInsertRowid), citas_afectadas: afectadas });
+    alert('¡Servicio guardado exitosamente con nombres en español e inglés!');
+    cerrarModalServicio();
+    cargarServicios();
   } catch (error) {
-    console.error('admin/bloqueos:', error);
-    res.status(500).json({ error: 'Error al crear el bloqueo' });
+    alert('Error: ' + error.message);
   }
-});
+}
 
-router.delete('/bloqueos/:id', (req, res) => {
+async function cargarServicios() {
+  const container = document.getElementById('admin-servicios-container');
+  if (!container) return;
+
   try {
-    const id = parseInt(req.params.id, 10);
-    if (!Number.isInteger(id)) return res.status(400).json({ error: 'Bloqueo inválido' });
-    const b = db.prepare('SELECT fecha FROM bloqueos WHERE id_bloqueo = ?').get(id);
-    if (!b) return res.status(404).json({ error: 'Bloqueo no encontrado' });
-    db.prepare('DELETE FROM bloqueos WHERE id_bloqueo = ?').run(id);
-    citasRouter.notificar(b.fecha);
-    res.json({ message: 'Bloqueo eliminado' });
-  } catch (error) {
-    res.status(500).json({ error: 'Error al eliminar el bloqueo' });
-  }
-});
+    const res = await fetch('/api/admin/servicios');
+    if (!res.ok) throw new Error('Error al cargar servicios');
+    const servicios = await res.json();
 
-module.exports = router;
+    if (!servicios || servicios.length === 0) {
+      container.innerHTML = '<p style="color:#718096; padding: 20px;">No hay servicios registrados aún. Haz clic en "+ Agregar Nuevo Servicio".</p>';
+      return;
+    }
+
+    container.innerHTML = servicios
+      .map(
+        (s) => `
+        <div class="servicio-card-admin">
+          <img src="${s.imagen || '/images/serv_fac1.jpg'}" alt="${s.nombre}" class="servicio-img">
+          <div class="servicio-body">
+            <div>
+              <span class="badge ${s.activo ? 'badge-success' : 'badge-danger'}">
+                ${s.activo ? 'Activo' : 'Inactivo'}
+              </span>
+              <h4 style="margin-top:6px;">${s.nombre_es || s.nombre}</h4>
+              <p class="service-en-name">🇺🇸 ${s.nombre_en || 'Sin nombre en inglés'}</p>
+              <p class="desc" style="margin-top:4px;">${s.descripcion_es || s.descripcion || ''}</p>
+            </div>
+            <div>
+              <div class="servicio-meta">
+                <span><strong>Precio:</strong> $${s.precio}</span>
+                <span><strong>Duración:</strong> ${s.duracion} min</span>
+              </div>
+              <div class="acciones-servicio">
+                <button class="btn btn-sm btn-outline" style="color:#1e293b; border-color:#cbd5e1;" onclick="editarServicio(${JSON.stringify(s).replace(/"/g, '&quot;')})">Editar</button>
+                <button class="btn btn-sm btn-danger" onclick="eliminarServicio(${s.id})">Eliminar</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      `
+      )
+      .join('');
+  } catch (error) {
+    container.innerHTML = '<p style="color:#e11d48;">No se pudieron cargar los servicios.</p>';
+  }
+}
+
+function editarServicio(s) {
+  document.getElementById('modal-servicio-titulo').textContent = 'Editar Servicio';
+  document.getElementById('servicio-id').value = s.id;
+  document.getElementById('servicio-nombre-es').value = s.nombre_es || s.nombre || '';
+  document.getElementById('servicio-nombre-en').value = s.nombre_en || '';
+  document.getElementById('servicio-desc-es').value = s.descripcion_es || s.descripcion || '';
+  document.getElementById('servicio-desc-en').value = s.descripcion_en || '';
+  document.getElementById('servicio-categoria').value = s.categoria || 'facial';
+  document.getElementById('servicio-precio').value = s.precio || 60;
+  document.getElementById('servicio-duracion').value = s.duracion || 60;
+  document.getElementById('servicio-imagen').value = s.imagen || '/images/serv_fac1.jpg';
+  document.getElementById('servicio-activo').checked = s.activo == 1;
+
+  document.getElementById('modal-servicio').style.display = 'flex';
+}
+
+async function eliminarServicio(id) {
+  if (!confirm('¿Estás seguro de que deseas eliminar este servicio?')) return;
+  try {
+    const res = await fetch(`/api/admin/servicios/${id}`, { method: 'DELETE' });
+    if (!res.ok) throw new Error('Error al eliminar');
+    cargarServicios();
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
+// 3. GESTIÓN DE CITAS Y NOTIFICACIONES
+async function cargarCitas() {
+  const tbody = document.getElementById('citas-body');
+  if (!tbody) return;
+
+  try {
+    const res = await fetch('/api/citas');
+    if (!res.ok) throw new Error('Error al obtener citas');
+    const citas = await res.json();
+
+    if (!citas || citas.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 20px; color:#718096;">No hay citas registradas.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = citas
+      .map(
+        (c) => `
+        <tr>
+          <td><strong>#${c.id}</strong></td>
+          <td>
+            <strong>${c.cliente_nombre || c.nombre_cliente || 'Cliente'}</strong><br>
+            <small style="color:#64748b;">${c.telefono_cliente || ''}</small>
+          </td>
+          <td>${c.servicio_nombre || 'Tratamiento'}</td>
+          <td><strong>${c.fecha}</strong> @ ${c.hora}</td>
+          <td>
+            <span class="badge status-${c.estado}">${c.estado.toUpperCase()}</span>
+          </td>
+          <td>
+            <div style="display:flex; gap:6px;">
+              ${
+                c.estado === 'pendiente'
+                  ? `<button class="btn btn-sm btn-success" onclick="confirmarCita(${c.id})">Confirmar</button>`
+                  : ''
+              }
+              ${
+                c.estado !== 'cancelada'
+                  ? `
+                <button class="btn btn-sm btn-outline" style="color:#0284c7; border-color:#bae6fd;" onclick="reagendarCitaPrompt(${c.id}, '${c.fecha}', '${c.hora}')">Reagendar</button>
+                <button class="btn btn-sm btn-danger" onclick="cancelarCitaPrompt(${c.id})">Cancelar</button>
+              `
+                  : ''
+              }
+            </div>
+          </td>
+        </tr>
+      `
+      )
+      .join('');
+  } catch (err) {
+    tbody.innerHTML = '<tr><td colspan="6" style="color:#e11d48; text-align:center;">Error al cargar citas.</td></tr>';
+  }
+}
+
+async function confirmarCita(id) {
+  try {
+    const res = await fetch(`/api/citas/${id}/confirmar`, { method: 'PUT' });
+    if (!res.ok) throw new Error('Error al confirmar');
+    alert('¡Cita confirmada! Se envió la notificación correspondiente al cliente.');
+    cargarCitas();
+    cargarHistorialNotificaciones();
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
+async function cancelarCitaPrompt(id) {
+  const motivo = prompt('Motivo de cancelación (opcional):', 'Cancelado por administración');
+  if (motivo === null) return;
+
+  try {
+    const res = await fetch(`/api/citas/${id}/cancelar`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ motivo, cancelado_por: 'admin' })
+    });
+    if (!res.ok) throw new Error('Error al cancelar');
+    alert('Cita cancelada. Alertas enviadas al cliente y admin.');
+    cargarCitas();
+    cargarHistorialNotificaciones();
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
+async function reagendarCitaPrompt(id, fechaActual, horaActual) {
+  const nuevaFecha = prompt('Introduce la nueva fecha (AAAA-MM-DD):', fechaActual);
+  if (!nuevaFecha) return;
+  const nuevaHora = prompt('Introduce el nuevo horario (HH:MM):', horaActual);
+  if (!nuevaHora) return;
+
+  try {
+    const res = await fetch(`/api/citas/${id}/reagendar`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nueva_fecha: nuevaFecha, nueva_hora: nuevaHora })
+    });
+    if (!res.ok) throw new Error('Error al reagendar');
+    alert('Cita reagendada. Alertas enviadas al cliente y admin.');
+    cargarCitas();
+    cargarHistorialNotificaciones();
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
+// 4. VERIFICACIÓN MANUAL DE ALERTAS 24H Y 12H
+async function verificarAlertasServidor() {
+  try {
+    const res = await fetch('/api/admin/verificar-alertas-pendientes', { method: 'POST' });
+    const data = await res.json();
+    alert(data.mensaje || 'Verificación de citas 24h y 12h completada.');
+    cargarHistorialNotificaciones();
+  } catch (err) {
+    alert('Error al verificar alertas: ' + err.message);
+  }
+}
+
+function probarAlertaExterna() {
+  if (typeof mostrarNotificacionNavegador === 'function') {
+    mostrarNotificacionNavegador(
+      '⏰ [PRUEBA 24H] Recordatorio CESGLOW',
+      'Tienes una cita pendiente en menos de 24 horas. ¡Esta alerta llega fuera de la pestaña!'
+    );
+  } else {
+    alert('Activa primero las notificaciones web con el botón arriba.');
+  }
+}
+
+// 5. CARGAR HISTORIAL DE NOTIFICACIONES
+async function cargarHistorialNotificaciones() {
+  const cont = document.getElementById('historial-notificaciones');
+  if (!cont) return;
+
+  try {
+    const res = await fetch('/api/notificaciones');
+    if (!res.ok) return;
+    const notificaciones = await res.json();
+
+    if (!notificaciones || notificaciones.length === 0) {
+      cont.innerHTML = '<p style="color:#718096; padding: 20px;">No hay notificaciones registradas.</p>';
+      return;
+    }
+
+    cont.innerHTML = notificaciones
+      .map(
+        (n) => `
+        <div class="notif-item ${n.leida ? 'leida' : 'no-leida'}">
+          <div class="notif-meta">
+            <span class="badge" style="background:#e0e7ff; color:#3730a3;">${n.tipo.toUpperCase()}</span>
+            <span class="badge" style="background:#fce7f3; color:#9d174d;">${n.rol.toUpperCase()}</span>
+            <span style="color:#64748b;">${n.fecha_creacion || ''}</span>
+          </div>
+          <h5 style="font-size:14px; font-weight:700; color:#0f172a;">${n.titulo}</h5>
+          <p style="font-size:13px; color:#334155; margin-top:2px;">${n.mensaje}</p>
+        </div>
+      `
+      )
+      .join('');
+  } catch (e) {
+    cont.innerHTML = '<p style="color:#718096;">No se pudo cargar el historial.</p>';
+  }
+}
