@@ -264,7 +264,13 @@
       api('/push/clave').then(function (r) {
         if (!(r.ok && r.data.clave)) return;
         pushDisponible = true;
-        return suscripcionActual().then(function (sub) { return sub ? null : activarPush(); });
+        return suscripcionActual().then(function (sub) {
+          if (!sub) return activarPush();
+          // El navegador ya tiene su suscripción: se vuelve a registrar a nombre de la persona que tiene la sesión abierta.
+          // Así, si en este mismo navegador entró antes otra cuenta (p. ej. el admin), los avisos pasan a la cuenta actual.
+          var j = sub.toJSON();
+          return api('/push/suscribir', { method: 'POST', body: { endpoint: j.endpoint, keys: j.keys } });
+        });
       }).catch(function () {});
       return;
     }
@@ -333,7 +339,7 @@
   function ciclo() {
     var tk = token();
     if (tk !== ultimoToken) {                 // inició o cerró sesión (o cambió de cuenta)
-      ultimoToken = tk; sesionInvalida = false; items = []; noLeidas = 0;
+      ultimoToken = tk; sesionInvalida = false; items = []; noLeidas = 0; ofrecido = false;
       if (!tk) { host.hidden = true; cerrar(); return; }
       ultimoSondeo = Date.now(); cargar(); return;
     }
