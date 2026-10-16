@@ -1,706 +1,254 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="robots" content="noindex, nofollow">
-    <title>Administración - CESGLOW</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --bg: #242020;
-            --card: #2d2828;
-            --card-2: #342e2e;
-            --border: rgba(216, 180, 160, 0.25);
-            --peach: #D8B4A0;
-            --peach-dark: #C9A08A;
-            --text: #FFFFFF;
-            --muted: #CFCFCF;
-            --danger: #FF8A8A;
-            --danger-bg: #ef4444;
-            --ok: #10b981;
-            --warn: #f59e0b;
-            --info: #6366f1;
-        }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        html { -webkit-text-size-adjust: 100%; }
-        body { font-family: 'Poppins', sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; min-height: 100vh; }
-        button, input, select { font-family: inherit; font-size: 14px; color: var(--text); }
-        [hidden] { display: none !important; }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CESGLOW - Panel de Administración</title>
+  <link rel="stylesheet" href="/css/styles.css">
+  <link rel="icon" type="image/png" href="/images/favicon.png">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #fff5f7; color: #2d3748; line-height: 1.5; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+    .admin-header { background: #1a1a1a; color: #fff; padding: 16px 0; border-bottom: 2px solid #e11d48; }
+    .header-container { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+    .logo-area { display: flex; align-items: center; gap: 12px; }
+    .admin-logo { height: 40px; width: 40px; object-fit: contain; border-radius: 8px; }
+    .logo-area h2 { font-size: 20px; color: #f43f5e; font-weight: 700; }
+    .header-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    
+    .btn { padding: 9px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; transition: 0.2s; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+    .btn-primary { background: #e11d48; color: #fff; }
+    .btn-primary:hover { background: #be123c; }
+    .btn-warning { background: #f59e0b; color: #1a1a1a; font-weight: 700; }
+    .btn-warning:hover { background: #d97706; }
+    .btn-secondary { background: #4a5568; color: #fff; }
+    .btn-secondary:hover { background: #2d3748; }
+    .btn-outline { background: transparent; border: 1px solid #718096; color: #e2e8f0; }
+    .btn-outline:hover { background: #2d3748; }
+    .btn-info { background: #0284c7; color: #fff; }
+    .btn-info:hover { background: #0369a1; }
+    .btn-danger { background: #dc2626; color: #fff; }
+    .btn-danger:hover { background: #b91c1c; }
+    .btn-success { background: #10b981; color: #fff; }
+    .btn-success:hover { background: #059669; }
+    .btn-sm { padding: 5px 10px; font-size: 12px; }
 
-        /* ── Botones ── */
-        .btn {
-            display: inline-flex; align-items: center; justify-content: center; gap: 6px;
-            padding: 9px 16px; border-radius: 10px; border: 1px solid var(--border);
-            background: transparent; color: var(--text); cursor: pointer; font-weight: 500; text-decoration: none;
-            transition: background .2s, border-color .2s, opacity .2s; white-space: nowrap;
-        }
-        .btn:hover:not(:disabled) { border-color: var(--peach); background: rgba(216, 180, 160, 0.12); }
-        .btn:disabled { opacity: .45; cursor: not-allowed; }
-        .btn-primary { background: var(--peach); border-color: var(--peach); color: #fff; }
-        .btn-primary:hover:not(:disabled) { background: var(--peach-dark); border-color: var(--peach-dark); }
-        .btn-ok { border-color: var(--ok); color: var(--ok); }
-        .btn-ok:hover:not(:disabled) { background: rgba(16, 185, 129, .15); border-color: var(--ok); }
-        .btn-danger { border-color: rgba(255, 138, 138, .55); color: var(--danger); }
-        .btn-danger:hover:not(:disabled) { background: rgba(239, 68, 68, .18); border-color: var(--danger); }
-        .btn-danger-solid { background: var(--danger-bg); border-color: var(--danger-bg); color: #fff; }
-        .btn-danger-solid:hover:not(:disabled) { background: #dc2626; border-color: #dc2626; }
-        .btn-sm { padding: 6px 12px; font-size: 13px; border-radius: 8px; }
-        .btn-wa { border-color: rgba(37, 211, 102, .6); color: #25D366; }
-        .btn-wa:hover { background: rgba(37, 211, 102, .15); border-color: #25D366; }
+    .admin-tabs { display: flex; gap: 8px; margin: 24px 0 16px; border-bottom: 2px solid #fed7aa; padding-bottom: 2px; }
+    .tab-btn { background: transparent; border: none; padding: 10px 18px; font-size: 14px; font-weight: 600; color: #718096; cursor: pointer; border-radius: 8px 8px 0 0; }
+    .tab-btn.active { color: #e11d48; background: #fff; border-bottom: 3px solid #e11d48; }
+    .tab-content { display: none; background: #fff; padding: 24px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.04); }
+    .tab-content.active { display: block; }
+    
+    .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
+    .subtitle { font-size: 13px; color: #718096; margin-top: 4px; }
+    
+    .table-responsive { overflow-x: auto; }
+    .table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; }
+    .table th { background: #f8fafc; padding: 12px; color: #475569; border-bottom: 2px solid #e2e8f0; }
+    .table td { padding: 14px 12px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+    
+    .badge { display: inline-block; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+    .badge-success, .status-confirmada { background: #d1fae5; color: #065f46; }
+    .badge-warning, .status-pendiente { background: #fef3c7; color: #92400e; }
+    .badge-danger, .status-cancelada { background: #fee2e2; color: #991b1b; }
 
-        /* ── Formularios ── */
-        input[type=text], input[type=email], input[type=password], input[type=number], input[type=date], input[type=time], input[type=search], select {
-            width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border);
-            background: var(--bg); color: var(--text); outline: none;
-        }
-        input:focus, select:focus { border-color: var(--peach); }
-        input::placeholder { color: #9d9494; }
-        input[type=date], input[type=time] { color-scheme: dark; }
-        select option { background: var(--bg); color: var(--text); }
-        label.campo { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+    .servicios-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+    .servicio-card-admin { background: #fff; border: 1px solid #fecdd3; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 6px rgba(0,0,0,0.03); display: flex; flex-direction: column; }
+    .servicio-img { width: 100%; height: 160px; object-fit: cover; }
+    .servicio-body { padding: 16px; flex: 1; display: flex; flex-direction: column; justify-content: space-between; gap: 10px; }
+    .servicio-body h4 { font-size: 16px; color: #1e293b; font-weight: 700; }
+    .service-en-name { font-size: 12px; color: #64748b; font-style: italic; }
+    .servicio-body .desc { font-size: 12px; color: #64748b; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .servicio-meta { display: flex; justify-content: space-between; font-size: 12px; color: #334155; padding-top: 8px; border-top: 1px solid #f1f5f9; }
+    .acciones-servicio { display: flex; gap: 8px; margin-top: 6px; }
 
-        /* ── Login ── */
-        #vista-login { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
-        .login-box { width: 100%; max-width: 400px; background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 36px 30px; text-align: center; }
-        .login-box img { height: 64px; width: auto; margin-bottom: 8px; }
-        .login-box h1 { font-family: 'Playfair Display', serif; font-size: 26px; color: var(--peach); margin-bottom: 4px; }
-        .login-box p.sub { color: var(--muted); font-size: 14px; margin-bottom: 24px; }
-        .login-box .fila { text-align: left; margin-bottom: 16px; }
-        .msg-error { background: rgba(239, 68, 68, .15); border: 1px solid rgba(239, 68, 68, .5); color: var(--danger); border-radius: 10px; padding: 10px 12px; font-size: 14px; margin-bottom: 16px; text-align: left; }
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.65); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 16px; }
+    .modal-box { background: #fff; border-radius: 16px; max-width: 650px; width: 100%; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+    .modal-header { padding: 18px 24px; background: #e11d48; color: #fff; display: flex; justify-content: space-between; align-items: center; }
+    .btn-close { background: transparent; border: none; color: #fff; font-size: 24px; cursor: pointer; }
+    form { padding: 24px; }
+    .form-group-row { display: flex; gap: 16px; margin-bottom: 14px; }
+    .form-group-row .form-group { flex: 1; }
+    .form-group { margin-bottom: 14px; }
+    .form-group label { display: block; font-size: 12px; font-weight: 700; color: #334155; margin-bottom: 5px; }
+    .form-control { width: 100%; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13px; font-family: inherit; }
+    .form-control:focus { outline: none; border-color: #e11d48; }
+    .checkbox-group label { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px; }
+    .modal-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; padding-top: 16px; border-top: 1px solid #e2e8f0; }
 
-        /* ── Encabezado y pestañas ── */
-        header.top { position: sticky; top: 0; z-index: 50; background: rgba(36, 32, 32, .96); backdrop-filter: blur(8px); border-bottom: 1px solid var(--border); }
-        .top-in { max-width: 1100px; margin: 0 auto; padding: 12px 16px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-        .marca { display: flex; align-items: center; gap: 8px; margin-right: auto; }
-        .marca img { height: 34px; width: auto; }
-        .marca strong { font-family: 'Playfair Display', serif; font-size: 20px; color: var(--peach); letter-spacing: 1px; }
-        .marca small { color: var(--muted); font-size: 12px; display: block; line-height: 1; margin-top: 2px; letter-spacing: 0; font-family: 'Poppins', sans-serif; }
-        .quien { color: var(--muted); font-size: 13px; }
-        nav.tabs { max-width: 1100px; margin: 0 auto; padding: 0 16px; display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; }
-        nav.tabs::-webkit-scrollbar { display: none; }
-        .tab { background: none; border: none; border-bottom: 3px solid transparent; padding: 10px 14px; color: var(--muted); cursor: pointer; font-weight: 500; white-space: nowrap; }
-        .tab:hover { color: var(--text); }
-        .tab.activa { color: var(--peach); border-bottom-color: var(--peach); }
-
-        main { max-width: 1100px; margin: 0 auto; padding: 22px 16px 80px; }
-        h2.titulo { font-family: 'Playfair Display', serif; font-size: 24px; margin-bottom: 4px; }
-        p.ayuda { color: var(--muted); font-size: 14px; margin-bottom: 18px; }
-        .barra { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 16px; }
-        .barra .item { min-width: 160px; flex: 1 1 160px; max-width: 260px; }
-        .barra .item.ancho { max-width: 340px; }
-        .resumen { color: var(--muted); font-size: 14px; margin: 4px 0 14px; }
-        .vacio, .cargando { text-align: center; color: var(--muted); padding: 40px 10px; border: 1px dashed var(--border); border-radius: 14px; }
-
-        /* ── Citas ── */
-        .dia { font-family: 'Playfair Display', serif; font-size: 18px; color: var(--peach); margin: 22px 0 10px; }
-        .dia::first-letter, .bloq strong::first-letter { text-transform: uppercase; }
-        .lista { display: grid; gap: 12px; }
-        .tarjeta { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 16px; display: grid; gap: 12px; grid-template-columns: 96px 1fr auto; align-items: start; }
-        .hora { font-size: 18px; font-weight: 600; line-height: 1.2; }
-        .hora small { display: block; color: var(--muted); font-weight: 400; font-size: 12px; margin-top: 2px; }
-        .cliente { font-weight: 600; font-size: 16px; word-break: break-word; }
-        .servicio { color: var(--peach); font-size: 14px; }
-        .meta { color: var(--muted); font-size: 13px; margin-top: 6px; display: flex; gap: 6px 14px; flex-wrap: wrap; align-items: center; word-break: break-word; }
-        .meta a { color: var(--muted); }
-        .notas { margin-top: 8px; font-size: 13px; background: var(--card-2); border-radius: 8px; padding: 8px 10px; color: #e8e8e8; word-break: break-word; }
-        .lado { display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
-        .acciones { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
-        .badge { display: inline-block; padding: 3px 12px; border-radius: 999px; font-size: 12px; font-weight: 600; color: #fff; text-transform: capitalize; }
-        .b-pendiente { background: var(--warn); } .b-confirmada { background: var(--ok); } .b-completada { background: var(--info); } .b-cancelada { background: var(--danger-bg); }
-        .b-admin { background: var(--peach); }
-
-        /* ── Clientes ── */
-        .cli { grid-template-columns: 1fr auto; }
-
-        /* ── Precios ── */
-        .grupo { margin-bottom: 26px; }
-        .grupo h3 { font-family: 'Playfair Display', serif; font-size: 18px; color: var(--peach); margin-bottom: 10px; }
-        .fila-precio { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 12px 16px; display: grid; grid-template-columns: 1fr 120px 120px auto; gap: 12px; align-items: end; margin-bottom: 10px; }
-        .fila-precio .nombre { font-weight: 500; align-self: center; }
-        .fila-precio .nombre small { display: block; color: var(--muted); font-weight: 400; font-size: 12px; }
-        .nota { margin-top: 20px; font-size: 13px; color: var(--muted); background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; }
-
-        /* ── Bloqueos ── */
-        .form-bloqueo { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 18px; margin-bottom: 24px; display: grid; gap: 14px; }
-        .form-bloqueo .fila2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
-        .radios { display: flex; gap: 18px; flex-wrap: wrap; }
-        .radios label { display: flex; align-items: center; gap: 8px; cursor: pointer; }
-        .radios input { accent-color: var(--peach); width: 18px; height: 18px; }
-        .bloq { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 12px 16px; }
-        .bloq strong { display: block; }
-        .bloq small { color: var(--muted); display: block; }
-
-        /* ── Ventana de confirmación y avisos ── */
-        .velo { position: fixed; inset: 0; z-index: 200; background: rgba(0, 0, 0, .72); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; padding: 20px; }
-        .modal { width: 100%; max-width: 420px; background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 28px 24px; text-align: center; }
-        .modal h3 { font-family: 'Playfair Display', serif; font-size: 22px; margin-bottom: 10px; }
-        .modal p { color: #ececec; font-size: 15px; margin-bottom: 22px; word-break: break-word; }
-        .modal .botones { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
-        #avisos { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); z-index: 300; display: grid; gap: 8px; width: min(92vw, 440px); }
-        .aviso { background: #3b3434; border: 1px solid var(--border); border-left: 4px solid var(--peach); border-radius: 10px; padding: 12px 14px; font-size: 14px; box-shadow: 0 8px 24px rgba(0, 0, 0, .4); }
-        .aviso.ok { border-left-color: var(--ok); } .aviso.error { border-left-color: var(--danger-bg); } .aviso.warn { border-left-color: var(--warn); }
-
-        @media (max-width: 720px) {
-            .tarjeta { grid-template-columns: 1fr; }
-            .cli { grid-template-columns: 1fr; }
-            .hora { display: flex; align-items: baseline; gap: 10px; }
-            .hora small { margin: 0; }
-            .lado { align-items: flex-start; }
-            .acciones { justify-content: flex-start; }
-            .fila-precio { grid-template-columns: 1fr 1fr; }
-            .fila-precio .nombre { grid-column: 1 / -1; }
-            .fila-precio .btn { grid-column: 1 / -1; }
-            .bloq { grid-template-columns: 1fr; }
-            .quien { display: none; }
-            .barra .item, .barra .item.ancho { max-width: none; flex-basis: 100%; }
-        }
-    </style>
+    .notif-item { padding: 14px; border-radius: 10px; margin-bottom: 10px; border-left: 4px solid #e11d48; background: #fff1f2; }
+    .notif-item.leida { border-left-color: #cbd5e1; background: #f8fafc; opacity: 0.8; }
+    .notif-meta { display: flex; gap: 8px; align-items: center; margin-bottom: 6px; font-size: 11px; }
+  </style>
 </head>
-<body>
+<body class="admin-body">
 
-    <!-- ═══ Inicio de sesión ═══ -->
-    <section id="vista-login" hidden>
-        <div class="login-box">
-            <img src="images/logo-icon.png" alt="">
-            <h1>CESGLOW</h1>
-            <p class="sub">Panel de administración</p>
-            <div id="login-error" class="msg-error" hidden></div>
-            <form id="form-login" autocomplete="on">
-                <div class="fila">
-                    <label class="campo" for="login-email">Correo</label>
-                    <input type="email" id="login-email" autocomplete="username" required>
-                </div>
-                <div class="fila">
-                    <label class="campo" for="login-pass">Contraseña</label>
-                    <input type="password" id="login-pass" autocomplete="current-password" required>
-                </div>
-                <button type="submit" class="btn btn-primary" style="width:100%;" id="login-btn">Entrar</button>
-            </form>
-            <p style="margin-top:18px; font-size:13px;"><a href="/" style="color:var(--muted);">← Volver al sitio</a></p>
+  <header class="admin-header">
+    <div class="container header-container">
+      <div class="logo-area">
+        <img src="/images/favicon.png" alt="CESGLOW" class="admin-logo">
+        <div>
+          <h2>CESGLOW Admin</h2>
+          <span class="badge badge-success" id="notif-permission-badge">Notificaciones Fuera de Tab</span>
         </div>
+      </div>
+      <div class="header-actions">
+        <button id="btn-solicitar-notif" class="btn btn-warning" onclick="solicitarPermisoNotificaciones()">
+          🔔 Activar Notis en Escritorio/Celular
+        </button>
+        <button id="btn-probar-alerta" class="btn btn-outline" onclick="probarAlertaExterna()">
+          ⚡ Probar Alerta 24h / 12h
+        </button>
+        <a href="/" class="btn btn-secondary">Ir a la Web</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="container admin-main">
+    
+    <nav class="admin-tabs">
+      <button class="tab-btn active" data-tab="tab-citas">Gestión de Citas</button>
+      <button class="tab-btn" data-tab="tab-servicios">Servicios del Salón</button>
+      <button class="tab-btn" data-tab="tab-notificaciones">Historial de Notificaciones</button>
+    </nav>
+
+    <!-- Pestaña 1: Citas -->
+    <section id="tab-citas" class="tab-content active">
+      <div class="section-header">
+        <div>
+          <h3>Control de Citas</h3>
+          <p class="subtitle">Creación, confirmación, cancelación y reagendación con notificaciones automáticas.</p>
+        </div>
+        <button class="btn btn-info" onclick="verificarAlertasServidor()">
+          🔄 Chequear Alertas 24h y 12h Ahora
+        </button>
+      </div>
+
+      <div class="table-responsive">
+        <table class="table" id="tabla-citas">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Cliente</th>
+              <th>Servicio</th>
+              <th>Fecha y Hora</th>
+              <th>Estado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="citas-body">
+            <!-- Citas cargadas con admin.js -->
+          </tbody>
+        </table>
+      </div>
     </section>
 
-    <!-- ═══ Panel ═══ -->
-    <div id="vista-app" hidden>
-        <header class="top">
-            <div class="top-in">
-                <div class="marca">
-                    <img src="images/logo-icon.png" alt="">
-                    <div><strong>CESGLOW</strong><small>Panel de administración</small></div>
-                </div>
-                <span class="quien" id="quien"></span>
-                <span id="bscBell"></span>
-                <a class="btn btn-sm" href="/">Ver sitio</a>
-                <button class="btn btn-sm" id="btn-salir" type="button">Cerrar sesión</button>
-            </div>
-            <nav class="tabs" role="tablist">
-                <button class="tab activa" role="tab" data-tab="citas">Citas</button>
-                <button class="tab" role="tab" data-tab="clientes">Clientes</button>
-                <button class="tab" role="tab" data-tab="precios">Precios</button>
-                <button class="tab" role="tab" data-tab="bloqueos">Bloqueos</button>
-            </nav>
-        </header>
+    <!-- Pestaña 2: Servicios (RESTAURADA CON AGREGAR NUEVO SERVICIO) -->
+    <section id="tab-servicios" class="tab-content">
+      <div class="section-header">
+        <div>
+          <h3>Catálogo de Servicios</h3>
+          <p class="subtitle">Nombres y descripciones bilingües (Español & English).</p>
+        </div>
+        <button id="btn-abrir-modal-servicio" class="btn btn-primary" onclick="abrirModalNuevoServicio()">
+          + Agregar Nuevo Servicio
+        </button>
+      </div>
 
-        <main>
-            <!-- CITAS -->
-            <section id="tab-citas">
-                <h2 class="titulo">Citas</h2>
-                <p class="ayuda">Confirma la cita cuando llegue el abono de $50, márcala como completada cuando termine o cancélala.</p>
-                <div class="barra">
-                    <div class="item">
-                        <label class="campo" for="f-periodo">Mostrar</label>
-                        <select id="f-periodo">
-                            <option value="proximas">Hoy y próximas</option>
-                            <option value="hoy">Solo hoy</option>
-                            <option value="pasadas">Pasadas</option>
-                            <option value="todas">Todas</option>
-                        </select>
-                    </div>
-                    <div class="item">
-                        <label class="campo" for="f-estado">Estado</label>
-                        <select id="f-estado">
-                            <option value="">Todos</option>
-                            <option value="pendiente">Pendientes</option>
-                            <option value="confirmada">Confirmadas</option>
-                            <option value="completada">Completadas</option>
-                            <option value="cancelada">Canceladas</option>
-                        </select>
-                    </div>
-                    <button class="btn" id="btn-recargar-citas" type="button">↻ Actualizar</button>
-                </div>
-                <div class="resumen" id="resumen-citas"></div>
-                <div id="lista-citas"></div>
-            </section>
+      <div class="servicios-grid" id="admin-servicios-container">
+        <!-- Servicios cargados con admin.js -->
+      </div>
+    </section>
 
-            <!-- CLIENTES -->
-            <section id="tab-clientes" hidden>
-                <h2 class="titulo">Clientes</h2>
-                <p class="ayuda">Cuentas registradas en el sitio. Si un cliente pide borrar su cuenta, hazlo desde aquí.</p>
-                <div class="barra">
-                    <div class="item ancho">
-                        <label class="campo" for="f-buscar">Buscar</label>
-                        <input type="search" id="f-buscar" placeholder="Nombre, correo o teléfono">
-                    </div>
-                    <button class="btn" id="btn-recargar-clientes" type="button">↻ Actualizar</button>
-                </div>
-                <div class="resumen" id="resumen-clientes"></div>
-                <div id="lista-clientes"></div>
-            </section>
+    <!-- Pestaña 3: Historial de Notificaciones -->
+    <section id="tab-notificaciones" class="tab-content">
+      <div class="section-header">
+        <div>
+          <h3>Historial de Notificaciones Enviadas</h3>
+          <p class="subtitle">Registro de creación, confirmación, cancelación, reagendación y avisos 24h / 12h.</p>
+        </div>
+      </div>
+      <div class="notificaciones-list" id="historial-notificaciones">
+        <!-- Notificaciones cargadas con admin.js -->
+      </div>
+    </section>
 
-            <!-- PRECIOS -->
-            <section id="tab-precios" hidden>
-                <h2 class="titulo">Precios</h2>
-                <p class="ayuda">Cambia el precio de cada servicio. Si un servicio tiene un rango (por ejemplo depilación, según el área), llena también el precio máximo.</p>
-                <div id="lista-precios"></div>
-                <p class="nota">Estos precios son los de la lista al agendar una cita. Los precios escritos directamente en la página principal (por ejemplo en "Nuestro Trabajo") no cambian desde aquí.</p>
-            </section>
+  </main>
 
-            <!-- BLOQUEOS -->
-            <section id="tab-bloqueos" hidden>
-                <h2 class="titulo">Bloqueos</h2>
-                <p class="ayuda">Cierra días u horas para que los clientes no puedan agendar en ellos. Las citas que ya existan no se cancelan solas.</p>
-                <form class="form-bloqueo" id="form-bloqueo">
-                    <div class="fila2">
-                        <div>
-                            <label class="campo" for="b-fecha">Fecha</label>
-                            <input type="date" id="b-fecha" required>
-                        </div>
-                        <div>
-                            <label class="campo" for="b-motivo">Motivo (opcional)</label>
-                            <input type="text" id="b-motivo" maxlength="200" placeholder="Ej: Vacaciones, cita médica">
-                        </div>
-                    </div>
-                    <div class="radios">
-                        <label><input type="radio" name="b-tipo" value="dia" checked> Todo el día</label>
-                        <label><input type="radio" name="b-tipo" value="rango"> Solo un rango de horas</label>
-                    </div>
-                    <div class="fila2" id="b-horas" hidden>
-                        <div>
-                            <label class="campo" for="b-inicio">Desde</label>
-                            <input type="time" id="b-inicio">
-                        </div>
-                        <div>
-                            <label class="campo" for="b-fin">Hasta</label>
-                            <input type="time" id="b-fin">
-                        </div>
-                    </div>
-                    <div><button type="submit" class="btn btn-primary" id="b-guardar">Bloquear</button></div>
-                </form>
-                <h3 class="dia" style="margin-top:0;">Bloqueos activos</h3>
-                <div id="lista-bloqueos"></div>
-            </section>
-        </main>
+  <!-- MODAL PARA AGREGAR / EDITAR SERVICIO (BILINGÜE ES / EN) -->
+  <div id="modal-servicio" class="modal-overlay" style="display: none;">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h4 id="modal-servicio-titulo">Agregar Nuevo Servicio</h4>
+        <button class="btn-close" onclick="cerrarModalServicio()">&times;</button>
+      </div>
+      <form id="form-servicio" onsubmit="guardarServicio(event)">
+        <input type="hidden" id="servicio-id">
+
+        <div class="form-group-row">
+          <div class="form-group">
+            <label for="servicio-nombre-es">🇪🇸 Nombre en Español *</label>
+            <input type="text" id="servicio-nombre-es" class="form-control" placeholder="Ej: Mascarilla de Oro 24K" required>
+          </div>
+          <div class="form-group">
+            <label for="servicio-nombre-en">🇺🇸 Name in English *</label>
+            <input type="text" id="servicio-nombre-en" class="form-control" placeholder="Ex: 24K Gold Facial Mask" required>
+          </div>
+        </div>
+
+        <div class="form-group-row">
+          <div class="form-group">
+            <label for="servicio-desc-es">🇪🇸 Descripción en Español</label>
+            <textarea id="servicio-desc-es" class="form-control" rows="2" placeholder="Beneficios del tratamiento..."></textarea>
+          </div>
+          <div class="form-group">
+            <label for="servicio-desc-en">🇺🇸 Description in English</label>
+            <textarea id="servicio-desc-en" class="form-control" rows="2" placeholder="Treatment benefits in English..."></textarea>
+          </div>
+        </div>
+
+        <div class="form-group-row">
+          <div class="form-group">
+            <label for="servicio-categoria">Categoría</label>
+            <select id="servicio-categoria" class="form-control">
+              <option value="facial">Facial</option>
+              <option value="corporal">Corporal</option>
+              <option value="mascarillas">Mascarillas</option>
+              <option value="manicura">Manicura & Uñas</option>
+              <option value="especial">Especial</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="servicio-precio">Precio ($)</label>
+            <input type="number" id="servicio-precio" class="form-control" min="1" step="0.5" value="65" required>
+          </div>
+          <div class="form-group">
+            <label for="servicio-duracion">Duración (minutos)</label>
+            <input type="number" id="servicio-duracion" class="form-control" value="60" min="15" step="5" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="servicio-imagen">URL de la Imagen</label>
+          <input type="text" id="servicio-imagen" class="form-control" placeholder="/images/serv_fac1.jpg">
+        </div>
+
+        <div class="form-group checkbox-group">
+          <label>
+            <input type="checkbox" id="servicio-activo" checked> Servicio Activo (Visible en el catálogo)
+          </label>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="cerrarModalServicio()">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Guardar Servicio Bilingüe</button>
+        </div>
+      </form>
     </div>
+  </div>
 
-    <div id="avisos" aria-live="polite"></div>
-    <script src="js/notificaciones.js"></script>
-
-    <script>
-    (function () {
-        'use strict';
-
-        var BACKEND_URL = 'https://bsc-beauty-skin-care-production.up.railway.app';
-        var TOKEN_KEY = 'beautyToken';   // el mismo que usa el sitio principal
-
-        // ───────── utilidades ─────────
-        var $ = function (s, r) { return (r || document).querySelector(s); };
-        var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
-        function esc(s) {
-            return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
-                return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
-            });
-        }
-        function getToken() { try { return localStorage.getItem(TOKEN_KEY); } catch (e) { return null; } }
-        function setToken(t) { try { localStorage.setItem(TOKEN_KEY, t); } catch (e) {} }
-        function clearToken() { try { localStorage.removeItem(TOKEN_KEY); } catch (e) {} }
-
-        function hoyISO() {
-            var d = new Date();
-            return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-        }
-        function ayerISO() {
-            var d = new Date(); d.setDate(d.getDate() - 1);
-            return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-        }
-        // "2026-10-12" → "lunes, 12 de octubre de 2026" (se arma con las partes para evitar problemas de zona horaria)
-        function fechaLarga(iso) {
-            var p = String(iso).slice(0, 10).split('-');
-            var d = new Date(+p[0], +p[1] - 1, +p[2]);
-            return d.toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-        }
-        function fechaCorta(iso) {
-            var p = String(iso).slice(0, 10).split('-');
-            return new Date(+p[0], +p[1] - 1, +p[2]).toLocaleDateString('es', { day: 'numeric', month: 'short', year: 'numeric' });
-        }
-        // "14:30" → "2:30 PM"
-        function hora12(hhmm) {
-            var h = parseInt(String(hhmm).slice(0, 2), 10), m = String(hhmm).slice(3, 5);
-            return ((h % 12) || 12) + ':' + m + ' ' + (h >= 12 ? 'PM' : 'AM');
-        }
-        function dinero(n) { return '$' + Number(n).toLocaleString('en-US', { maximumFractionDigits: 2 }); }
-        function nombreCompleto(o) { return ((o.nombre || '') + ' ' + (o.apellido || '')).trim() || '(cuenta borrada)'; }
-        // WhatsApp usa el número tal como lo escribió el cliente (solo dígitos)
-        function enlaceWA(tel, texto) {
-            var d = String(tel || '').replace(/\D/g, '');
-            return d ? 'https://wa.me/' + d + '?text=' + encodeURIComponent(texto || '') : '';
-        }
-        function botonWA(tel, texto) {
-            var url = enlaceWA(tel, texto);
-            return url
-                ? '<a class="btn btn-sm btn-wa" href="' + esc(url) + '" target="_blank" rel="noopener">WhatsApp</a>'
-                : '<span class="meta" style="margin:0;">Sin teléfono</span>';
-        }
-
-        function aviso(texto, tipo, ms) {
-            var el = document.createElement('div');
-            el.className = 'aviso ' + (tipo || '');
-            el.textContent = texto;
-            $('#avisos').appendChild(el);
-            setTimeout(function () { el.remove(); }, ms || 3500);
-        }
-
-        // Ventana de confirmación → promesa (true/false)
-        function confirmar(opc) {
-            return new Promise(function (resolve) {
-                var velo = document.createElement('div');
-                velo.className = 'velo';
-                velo.innerHTML =
-                    '<div class="modal" role="dialog" aria-modal="true">' +
-                    '<h3>' + esc(opc.titulo) + '</h3><p>' + esc(opc.mensaje) + '</p>' +
-                    '<div class="botones"><button class="btn" data-r="no">' + esc(opc.cancelar || 'Volver') + '</button>' +
-                    '<button class="btn ' + (opc.peligro ? 'btn-danger-solid' : 'btn-primary') + '" data-r="si">' + esc(opc.aceptar || 'Aceptar') + '</button></div></div>';
-                function cerrar(r) { document.removeEventListener('keydown', tecla); velo.remove(); resolve(r); }
-                function tecla(e) { if (e.key === 'Escape') cerrar(false); }
-                velo.addEventListener('click', function (e) {
-                    if (e.target === velo) return cerrar(false);
-                    var b = e.target.closest('button[data-r]'); if (b) cerrar(b.dataset.r === 'si');
-                });
-                document.addEventListener('keydown', tecla);
-                document.body.appendChild(velo);
-                $('button[data-r="no"]', velo).focus();
-            });
-        }
-
-        // ───────── llamadas al servidor ─────────
-        function SesionCaducada(msg) { this.message = msg; }
-        async function api(ruta, opc) {
-            opc = opc || {};
-            var res;
-            try {
-                res = await fetch(BACKEND_URL + '/api/admin' + ruta, {
-                    method: opc.method || 'GET',
-                    headers: Object.assign({ 'Authorization': 'Bearer ' + getToken() }, opc.body ? { 'Content-Type': 'application/json' } : {}),
-                    body: opc.body ? JSON.stringify(opc.body) : undefined
-                });
-            } catch (e) {
-                throw new Error('No hay conexión con el servidor. Intenta de nuevo.');
-            }
-            var data = {};
-            try { data = await res.json(); } catch (e) {}
-            var errAuth = res.status === 401 || (res.status === 403 && /^(Acceso denegado|Token)/.test(data.error || ''));
-            if (errAuth) {
-                var msg = /permisos de administrador/.test(data.error || '')
-                    ? 'Esta cuenta no tiene permisos de administrador.'
-                    : 'Tu sesión expiró. Inicia sesión de nuevo.';
-                mostrarLogin(msg);
-                throw new SesionCaducada(msg);
-            }
-            if (!res.ok) throw new Error(data.error || 'Ocurrió un error. Intenta de nuevo.');
-            return data;
-        }
-        function fallo(e) { if (!(e instanceof SesionCaducada)) aviso(e.message, 'error', 5000); }
-
-        // ───────── sesión ─────────
-        function mostrarLogin(mensaje) {
-            $('#vista-app').hidden = true;
-            $('#vista-login').hidden = false;
-            var box = $('#login-error');
-            box.hidden = !mensaje;
-            box.textContent = mensaje || '';
-        }
-        function mostrarApp(yo) {
-            $('#vista-login').hidden = true;
-            $('#vista-app').hidden = false;
-            $('#quien').textContent = nombreCompleto(yo);
-            cambiarTab('citas');
-        }
-        async function iniciar() {
-            if (!getToken()) return mostrarLogin();
-            try { mostrarApp(await api('/yo')); } catch (e) { /* api() ya mostró el login */ }
-        }
-
-        $('#form-login').addEventListener('submit', async function (e) {
-            e.preventDefault();
-            var btn = $('#login-btn'); btn.disabled = true; btn.textContent = 'Entrando…';
-            $('#login-error').hidden = true;
-            try {
-                var res = await fetch(BACKEND_URL + '/api/auth/login', {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email: $('#login-email').value.trim(), password: $('#login-pass').value })
-                });
-                var data = {}; try { data = await res.json(); } catch (x) {}
-                if (!res.ok) throw new Error(data.error || 'No se pudo iniciar sesión.');
-                setToken(data.token);
-                var yo;
-                try { yo = await api('/yo'); }
-                catch (x) { clearToken(); throw (x instanceof SesionCaducada ? new Error(x.message) : x); }
-                $('#login-pass').value = '';
-                mostrarApp(yo);
-            } catch (err) {
-                var box = $('#login-error'); box.textContent = err.message; box.hidden = false;
-            } finally {
-                btn.disabled = false; btn.textContent = 'Entrar';
-            }
-        });
-        $('#btn-salir').addEventListener('click', function () { clearToken(); mostrarLogin(); });
-
-        // ───────── pestañas ─────────
-        var cargadores = { citas: cargarCitas, clientes: cargarClientes, precios: cargarPrecios, bloqueos: cargarBloqueos };
-        function cambiarTab(nombre) {
-            $$('.tab').forEach(function (t) { t.classList.toggle('activa', t.dataset.tab === nombre); t.setAttribute('aria-selected', t.dataset.tab === nombre); });
-            ['citas', 'clientes', 'precios', 'bloqueos'].forEach(function (n) { $('#tab-' + n).hidden = n !== nombre; });
-            cargadores[nombre]();
-        }
-        $$('.tab').forEach(function (t) { t.addEventListener('click', function () { cambiarTab(t.dataset.tab); }); });
-
-        // ═════════ CITAS ═════════
-        var citasEnPantalla = [];
-        async function cargarCitas() {
-            var cont = $('#lista-citas');
-            cont.innerHTML = '<div class="cargando">Cargando citas…</div>';
-            $('#resumen-citas').textContent = '';
-            var periodo = $('#f-periodo').value, estado = $('#f-estado').value;
-            var q = [];
-            if (periodo === 'proximas') q.push('desde=' + hoyISO());
-            if (periodo === 'hoy') { q.push('desde=' + hoyISO()); q.push('hasta=' + hoyISO()); }
-            if (periodo === 'pasadas') { q.push('hasta=' + ayerISO()); }
-            if (estado) q.push('estado=' + estado);
-            q.push('orden=' + (periodo === 'pasadas' || periodo === 'todas' ? 'desc' : 'asc'));
-            try {
-                citasEnPantalla = await api('/citas?' + q.join('&'));
-                pintarCitas();
-            } catch (e) { cont.innerHTML = '<div class="vacio">No se pudieron cargar las citas.</div>'; fallo(e); }
-        }
-        function textoWACita(c) {
-            var base = 'Hola ' + (c.nombre || '') + ', te escribimos de CESGLOW sobre tu cita del ' + fechaLarga(c.fecha_cita) + ' a las ' + hora12(String(c.fecha_cita).slice(11, 16)) + '.';
-            return c.estado === 'pendiente'
-                ? base + ' Para confirmarla necesitamos tu abono de $50. ¿Con qué medio de pago deseas hacerlo?'
-                : base;
-        }
-        function pintarCitas() {
-            var cont = $('#lista-citas');
-            if (!citasEnPantalla.length) {
-                cont.innerHTML = '<div class="vacio">No hay citas con estos filtros.</div>';
-                $('#resumen-citas').textContent = '';
-                return;
-            }
-            var pend = citasEnPantalla.filter(function (c) { return c.estado === 'pendiente'; }).length;
-            $('#resumen-citas').textContent = citasEnPantalla.length + (citasEnPantalla.length === 1 ? ' cita' : ' citas') +
-                (pend ? ' · ' + pend + (pend === 1 ? ' pendiente' : ' pendientes') + ' por confirmar' : '');
-            var html = '', dia = '';
-            citasEnPantalla.forEach(function (c) {
-                var d = String(c.fecha_cita).slice(0, 10);
-                if (d !== dia) { dia = d; html += '<h3 class="dia">' + esc(fechaLarga(d)) + '</h3>'; }
-                var acc = '';
-                if (c.estado === 'pendiente') acc += '<button class="btn btn-sm btn-ok" data-accion="confirmada" data-id="' + c.id_cita + '">Confirmar abono</button>';
-                if (c.estado === 'confirmada') acc += '<button class="btn btn-sm btn-ok" data-accion="completada" data-id="' + c.id_cita + '">Completada</button>';
-                if (c.estado === 'pendiente' || c.estado === 'confirmada') acc += '<button class="btn btn-sm btn-danger" data-accion="cancelada" data-id="' + c.id_cita + '">Cancelar</button>';
-                if (c.estado === 'completada') acc += '<button class="btn btn-sm" data-accion="confirmada" data-id="' + c.id_cita + '">Deshacer</button>';
-                var precio = c.servicio_precio != null
-                    ? ' · ' + dinero(c.servicio_precio) + (c.servicio_precio_max ? ' – ' + dinero(c.servicio_precio_max) : '')
-                    : '';
-                html +=
-                    '<article class="tarjeta">' +
-                      '<div class="hora">' + esc(hora12(String(c.fecha_cita).slice(11, 16))) + '<small>' + (c.duracion_minutos ? esc(c.duracion_minutos) + ' min' : '') + '</small></div>' +
-                      '<div>' +
-                        '<div class="cliente">' + esc(nombreCompleto(c)) + '</div>' +
-                        '<div class="servicio">' + esc(c.servicio || 'Servicio eliminado') + esc(precio) + '</div>' +
-                        '<div class="meta">' +
-                          (c.telefono ? '<span>' + esc(c.telefono) + '</span>' : '') +
-                          (c.email ? '<a href="mailto:' + esc(c.email) + '">' + esc(c.email) + '</a>' : '') +
-                        '</div>' +
-                        (c.notas ? '<div class="notas"><strong>Notas:</strong> ' + esc(c.notas) + '</div>' : '') +
-                      '</div>' +
-                      '<div class="lado">' +
-                        '<span class="badge b-' + esc(c.estado) + '">' + esc(c.estado) + '</span>' +
-                        '<div class="acciones">' + acc + botonWA(c.telefono, textoWACita(c)) + '</div>' +
-                      '</div>' +
-                    '</article>';
-            });
-            cont.innerHTML = html;
-        }
-        $('#lista-citas').addEventListener('click', async function (e) {
-            var b = e.target.closest('button[data-accion]');
-            if (!b) return;
-            var id = b.dataset.id, nuevo = b.dataset.accion;
-            var cita = citasEnPantalla.filter(function (c) { return String(c.id_cita) === id; })[0];
-            if (nuevo === 'cancelada') {
-                var si = await confirmar({
-                    titulo: 'Cancelar cita',
-                    mensaje: 'Vas a cancelar la cita de ' + nombreCompleto(cita || {}) + ' (' + (cita ? fechaCorta(cita.fecha_cita) + ', ' + hora12(String(cita.fecha_cita).slice(11, 16)) : '') + '). El horario quedará libre. Si ya pagó el abono, acuerda con el cliente por WhatsApp qué pasa con él.',
-                    aceptar: 'Sí, cancelar cita', cancelar: 'Volver', peligro: true
-                });
-                if (!si) return;
-            }
-            b.disabled = true;
-            try {
-                await api('/citas/' + id + '/estado', { method: 'PUT', body: { estado: nuevo } });
-                aviso('Cita ' + (nuevo === 'confirmada' ? 'confirmada' : nuevo === 'completada' ? 'marcada como completada' : 'cancelada'), 'ok');
-                cargarCitas();
-            } catch (err) { b.disabled = false; fallo(err); }
-        });
-        $('#f-periodo').addEventListener('change', cargarCitas);
-        $('#f-estado').addEventListener('change', cargarCitas);
-        $('#btn-recargar-citas').addEventListener('click', cargarCitas);
-
-        // ═════════ CLIENTES ═════════
-        var clientes = [];
-        async function cargarClientes() {
-            var cont = $('#lista-clientes');
-            cont.innerHTML = '<div class="cargando">Cargando clientes…</div>';
-            try { clientes = await api('/clientes'); pintarClientes(); }
-            catch (e) { cont.innerHTML = '<div class="vacio">No se pudieron cargar los clientes.</div>'; fallo(e); }
-        }
-        function pintarClientes() {
-            var q = $('#f-buscar').value.trim().toLowerCase();
-            var lista = clientes.filter(function (c) {
-                if (!q) return true;
-                var digitos = q.replace(/\D/g, '');
-                var porTelefono = digitos && String(c.telefono || '').replace(/\D/g, '').indexOf(digitos) !== -1;
-                return porTelefono || (nombreCompleto(c) + ' ' + (c.email || '') + ' ' + (c.telefono || '')).toLowerCase().indexOf(q) !== -1;
-            });
-            $('#resumen-clientes').textContent = lista.length + (lista.length === 1 ? ' cuenta' : ' cuentas') + (q ? ' encontradas' : ' registradas');
-            if (!lista.length) { $('#lista-clientes').innerHTML = '<div class="vacio">No hay cuentas que coincidan.</div>'; return; }
-            $('#lista-clientes').innerHTML = '<div class="lista">' + lista.map(function (c) {
-                var esAdmin = c.rol === 'admin';
-                return '<article class="tarjeta cli">' +
-                    '<div>' +
-                      '<div class="cliente">' + esc(nombreCompleto(c)) + (esAdmin ? ' <span class="badge b-admin">Administrador</span>' : '') + '</div>' +
-                      '<div class="meta">' +
-                        '<a href="mailto:' + esc(c.email) + '">' + esc(c.email) + '</a>' +
-                        '<span>' + (c.telefono ? esc(c.telefono) : 'Sin teléfono') + '</span>' +
-                      '</div>' +
-                      '<div class="meta">' +
-                        '<span>Registrado el ' + esc(fechaCorta(c.fecha_creacion)) + '</span>' +
-                        '<span>' + esc(c.total_citas) + (c.total_citas === 1 ? ' cita' : ' citas') + '</span>' +
-                      '</div>' +
-                    '</div>' +
-                    '<div class="acciones">' + botonWA(c.telefono, 'Hola ' + (c.nombre || '') + ', te escribimos de CESGLOW.') +
-                      (esAdmin ? '' : '<button class="btn btn-sm btn-danger" data-borrar="' + c.id_usuario + '">Borrar cuenta</button>') +
-                    '</div>' +
-                  '</article>';
-            }).join('') + '</div>';
-        }
-        $('#f-buscar').addEventListener('input', pintarClientes);
-        $('#btn-recargar-clientes').addEventListener('click', cargarClientes);
-        $('#lista-clientes').addEventListener('click', async function (e) {
-            var b = e.target.closest('button[data-borrar]');
-            if (!b) return;
-            var c = clientes.filter(function (x) { return String(x.id_usuario) === b.dataset.borrar; })[0];
-            if (!c) return;
-            var si = await confirmar({
-                titulo: 'Borrar cuenta',
-                mensaje: 'Vas a borrar la cuenta de ' + nombreCompleto(c) + ' (' + c.email + '). También se eliminarán sus ' + c.total_citas + (c.total_citas === 1 ? ' cita' : ' citas') + ' y su reseña. Esta acción no se puede deshacer.',
-                aceptar: 'Sí, borrar cuenta', cancelar: 'Volver', peligro: true
-            });
-            if (!si) return;
-            b.disabled = true;
-            try {
-                var r = await api('/clientes/' + c.id_usuario, { method: 'DELETE' });
-                aviso('Cuenta eliminada (' + r.citas_borradas + (r.citas_borradas === 1 ? ' cita' : ' citas') + ', ' + r.resenas_borradas + (r.resenas_borradas === 1 ? ' reseña' : ' reseñas') + ')', 'ok', 4500);
-                cargarClientes();
-            } catch (err) { b.disabled = false; fallo(err); }
-        });
-
-        // ═════════ PRECIOS ═════════
-        async function cargarPrecios() {
-            var cont = $('#lista-precios');
-            cont.innerHTML = '<div class="cargando">Cargando servicios…</div>';
-            try {
-                var servicios = await api('/servicios');
-                var grupos = {};
-                servicios.forEach(function (s) { (grupos[s.categoria || 'General'] = grupos[s.categoria || 'General'] || []).push(s); });
-                cont.innerHTML = Object.keys(grupos).map(function (cat) {
-                    return '<div class="grupo"><h3>' + esc(cat) + '</h3>' + grupos[cat].map(function (s) {
-                        return '<div class="fila-precio" data-id="' + s.id_servicio + '" data-precio="' + esc(s.precio) + '" data-max="' + esc(s.precio_max == null ? '' : s.precio_max) + '">' +
-                            '<div class="nombre">' + esc(s.nombre) + '<small>' + (s.duracion_minutos ? esc(s.duracion_minutos) + ' min' : '') + '</small></div>' +
-                            '<div><label class="campo">Precio ($)</label><input type="number" min="0" step="1" inputmode="decimal" class="in-precio" value="' + esc(s.precio) + '"></div>' +
-                            '<div><label class="campo">Máximo ($, opcional)</label><input type="number" min="0" step="1" inputmode="decimal" class="in-max" value="' + esc(s.precio_max == null ? '' : s.precio_max) + '"></div>' +
-                            '<button class="btn btn-primary btn-sm" disabled>Guardar</button>' +
-                        '</div>';
-                    }).join('') + '</div>';
-                }).join('') || '<div class="vacio">No hay servicios.</div>';
-            } catch (e) { cont.innerHTML = '<div class="vacio">No se pudieron cargar los servicios.</div>'; fallo(e); }
-        }
-        $('#lista-precios').addEventListener('input', function (e) {
-            var fila = e.target.closest('.fila-precio'); if (!fila) return;
-            var cambio = $('.in-precio', fila).value !== fila.dataset.precio || $('.in-max', fila).value !== fila.dataset.max;
-            $('button', fila).disabled = !cambio;
-        });
-        $('#lista-precios').addEventListener('click', async function (e) {
-            var b = e.target.closest('button'); if (!b) return;
-            var fila = b.closest('.fila-precio');
-            var precio = $('.in-precio', fila).value, max = $('.in-max', fila).value;
-            if (precio === '' || isNaN(Number(precio)) || Number(precio) < 0) return aviso('Escribe un precio válido.', 'error');
-            b.disabled = true; b.textContent = 'Guardando…';
-            try {
-                var r = await api('/servicios/' + fila.dataset.id, { method: 'PUT', body: { precio: precio, precio_max: max } });
-                fila.dataset.precio = String(r.precio); fila.dataset.max = r.precio_max == null ? '' : String(r.precio_max);
-                $('.in-precio', fila).value = fila.dataset.precio; $('.in-max', fila).value = fila.dataset.max;
-                aviso('Precio actualizado', 'ok');
-                b.textContent = 'Guardar';
-            } catch (err) { b.disabled = false; b.textContent = 'Guardar'; fallo(err); }
-        });
-
-        // ═════════ BLOQUEOS ═════════
-        $('#b-fecha').min = hoyISO();
-        $$('input[name="b-tipo"]').forEach(function (r) {
-            r.addEventListener('change', function () { $('#b-horas').hidden = $('input[name="b-tipo"]:checked').value !== 'rango'; });
-        });
-        async function cargarBloqueos() {
-            var cont = $('#lista-bloqueos');
-            cont.innerHTML = '<div class="cargando">Cargando…</div>';
-            try {
-                var lista = await api('/bloqueos');
-                if (!lista.length) { cont.innerHTML = '<div class="vacio">No hay días ni horas bloqueados.</div>'; return; }
-                cont.innerHTML = '<div class="lista">' + lista.map(function (b) {
-                    var quien = b.hora_inicio && b.hora_fin ? hora12(b.hora_inicio) + ' – ' + hora12(b.hora_fin) : 'Todo el día';
-                    return '<div class="bloq"><div><strong>' + esc(fechaLarga(b.fecha)) + '</strong>' +
-                        '<small>' + esc(quien) + (b.motivo ? ' · ' + esc(b.motivo) : '') + '</small></div>' +
-                        '<button class="btn btn-sm btn-danger" data-quitar="' + b.id_bloqueo + '">Quitar bloqueo</button></div>';
-                }).join('') + '</div>';
-            } catch (e) { cont.innerHTML = '<div class="vacio">No se pudieron cargar los bloqueos.</div>'; fallo(e); }
-        }
-        $('#form-bloqueo').addEventListener('submit', async function (e) {
-            e.preventDefault();
-            var rango = $('input[name="b-tipo"]:checked').value === 'rango';
-            var body = { fecha: $('#b-fecha').value, motivo: $('#b-motivo').value.trim() };
-            if (rango) {
-                body.hora_inicio = $('#b-inicio').value; body.hora_fin = $('#b-fin').value;
-                if (!body.hora_inicio || !body.hora_fin) return aviso('Indica la hora de inicio y la de fin.', 'error');
-                if (body.hora_inicio >= body.hora_fin) return aviso('La hora de inicio debe ser anterior a la de fin.', 'error');
-            }
-            var btn = $('#b-guardar'); btn.disabled = true;
-            try {
-                var r = await api('/bloqueos', { method: 'POST', body: body });
-                if (r.citas_afectadas > 0) {
-                    aviso('Bloqueo creado. Ojo: ya hay ' + r.citas_afectadas + (r.citas_afectadas === 1 ? ' cita' : ' citas') + ' en ese horario; no se cancelaron solas. Revísalas en la pestaña Citas.', 'warn', 8000);
-                } else { aviso('Bloqueo creado', 'ok'); }
-                $('#b-motivo').value = '';
-                cargarBloqueos();
-            } catch (err) { fallo(err); } finally { btn.disabled = false; }
-        });
-        $('#lista-bloqueos').addEventListener('click', async function (e) {
-            var b = e.target.closest('button[data-quitar]'); if (!b) return;
-            b.disabled = true;
-            try { await api('/bloqueos/' + b.dataset.quitar, { method: 'DELETE' }); aviso('Bloqueo eliminado', 'ok'); cargarBloqueos(); }
-            catch (err) { b.disabled = false; fallo(err); }
-        });
-
-        iniciar();
-    })();
-    </script>
+  <script src="/js/notificaciones.js"></script>
+  <script src="/admin.js"></script>
 </body>
 </html>
