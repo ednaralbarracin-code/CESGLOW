@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const { JWT_SECRET } = require('../middleware/auth');
 const { db } = require('../config/database');
 const notificaciones = require('../services/notificaciones');
+const agenda = require('../services/agenda');
 
 // Middleware para verificar token
 function verificarToken(req, res, next) {
@@ -178,9 +179,37 @@ router.put('/:id/cancelar', verificarToken, (req, res) => {
 
     db.prepare("UPDATE citas SET estado = 'cancelada' WHERE id_cita = ?").run(id);
     notificar(String(cita.fecha_cita).substr(0, 10));
+
+    // Aviso al cliente (confirmación de la cancelación) y al administrador
+    const srv = db.prepare('SELECT nombre FROM servicios WHERE id_servicio = ?').get(cita.id_servicio);
+    notificaciones.notificarCambioCita('cancelada', {
+      id_usuario, por: 'cliente', abonoPagado: cita.estado === 'confirmada', horasAntes: agenda.horasHasta(cita.fecha_cita),
+      servicios: [{ nombre: srv ? srv.nombre : 'Servicio' }], citaIds: [cita.id_cita],
+      fecha: String(cita.fecha_cita).slice(0, 10), hora: String(cita.fecha_cita).slice(11, 16)
+    }).catch(e => console.error('notificaciones:', e.message));
     res.json({ message: 'Cita cancelada correctamente' });
   } catch (error) {
     res.status(500).json({ error: 'Error al cancelar la cita' });
+  }
+});
+
+// Reprogramar una cita propia (con al menos 24 horas de anticipación; con menos, hay que escribir por WhatsApp)
+router.put('/:id/reprogramar', verificarToken, (req, res) => {
+  try {
+    const id_usuario = req.user.id || req.user.id_usuario;
+    const id = parseInt(req.params.id, 10);
+    if (!Number.isInteger(id)) return res.status(400).json({ error: 'Cita inválida' });
+    const { fecha, hora } = req.body || {};
+    const r = agenda.reprogramarVisita(id, fecha, hora, { idUsuario: id_usuario, minHorasAntes: 24 });
+    if (r.error) return res.status(r.status).json({ error: r.error });
+    notificar(r.datos.fechaAnterior);
+    notificar(r.datos.fecha);
+    notificaciones.notificarCambioCita('reprogramada', Object.assign({ por: 'cliente' }, r.datos))
+      .catch(e => console.error('notificaciones:', e.message));
+    res.json({ message: 'Cita reprogramada', fecha: r.datos.fecha, hora: r.datos.hora });
+  } catch (error) {
+    console.error('citas/reprogramar:', error);
+    res.status(500).json({ error: 'Error al reprogramar la cita' });
   }
 });
 
