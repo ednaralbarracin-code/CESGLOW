@@ -84,9 +84,6 @@
     "Resultados Excepcionales": "Exceptional Results",
     "Cuidado de Belleza": "Beauty Care",
     "Confianza y Belleza": "Confidence and Beauty",
-    "Depilación con cera": "Wax Hair Removal",
-    "Tratamientos de acné": "Acne Treatments",
-    "Piel más suave y estética": "Softer, more aesthetic skin",
     "¿Por Qué Elegirnos?": "Why Choose Us?",
     "Compromiso con la excelencia y tu satisfacción.": "Commitment to excellence and your satisfaction.",
     "Tecnología de Punta": "Cutting-Edge Technology",
@@ -217,7 +214,33 @@
     "Sí, borrar": "Yes, delete",
     "Tu reseña fue eliminada": "Your review was deleted",
     "No tienes una reseña para borrar": "You don't have a review to delete",
-    "Error al borrar la reseña": "Error deleting the review"
+    "Error al borrar la reseña": "Error deleting the review",
+    "desde $40 asta $200": "from $40 to $200",
+    "desde $40 hasta $200": "from $40 to $200",
+    "a $130": "at $130",
+    "desde $170 a $300": "from $170 to $300",
+    "desde $200 a $300": "from $200 to $300",
+    "Reprogramar": "Reschedule",
+    "Reprogramar cita": "Reschedule appointment",
+    "Ahora:": "Now:",
+    "Nueva fecha": "New date",
+    "Nueva hora": "New time",
+    "Horarios ocupados ese día:": "Busy times that day:",
+    "Puedes reprogramar con al menos 24 horas de anticipación.": "You can reschedule with at least 24 hours notice.",
+    "Confirmar cambio": "Confirm change",
+    "Elige la nueva fecha.": "Choose the new date.",
+    "Cita reprogramada": "Appointment rescheduled",
+    "Hora inválida": "Invalid time",
+    "Cita no encontrada": "Appointment not found",
+    "Esta cita ya no se puede reprogramar": "This appointment can no longer be rescheduled",
+    "Esta cita ya no se puede cancelar": "This appointment can no longer be cancelled",
+    "La visita no cabe en ese día. Elige una hora más temprana.": "The visit does not fit in that day. Please choose an earlier time.",
+    "Elige una fecha y hora que todavía no hayan pasado.": "Choose a date and time that have not passed yet.",
+    "Elige un día u hora diferente al actual.": "Choose a day or time different from the current one.",
+    "Ese horario no está disponible. Elige otro.": "That time is not available. Please choose another.",
+    "Con menos de 24 horas de anticipación no puedes reprogramar desde la página. Escríbenos por WhatsApp.": "With less than 24 hours notice you cannot reschedule from the website. Please message us on WhatsApp.",
+    "Error al reprogramar la cita": "Error rescheduling the appointment",
+    "Ocurrió un error. Intenta de nuevo.": "Something went wrong. Please try again."
   };
 
   // Normaliza espacios y el selector de emoji para que las claves coincidan siempre
@@ -303,6 +326,30 @@
     hideOverlay();
   }
 
+  /* Servicios creados o editados desde el panel de administración: su nombre, descripción y categoría en inglés
+     vienen del servidor. Se agregan al diccionario para que t() y la traducción de la página los reconozcan
+     igual que a los demás textos (si un servicio no tiene inglés, se sigue viendo en español). */
+  var BACKEND_URL = 'https://bsc-beauty-skin-care-production.up.railway.app';
+  function cargarTraduccionesServicios() {
+    if (!window.fetch) return;
+    fetch(BACKEND_URL + '/api/citas/servicios')
+      .then(function (r) { return r.ok ? r.json() : []; })
+      .then(function (lista) {
+        var cambio = false;
+        (Array.isArray(lista) ? lista : []).forEach(function (s) {
+          [['nombre', 'nombre_en'], ['descripcion', 'descripcion_en'], ['categoria', 'categoria_en']].forEach(function (par) {
+            var es = s[par[0]], en = s[par[1]];
+            if (es && en && DICT[norm(es)] !== en) { DICT[norm(es)] = en; cambio = true; }
+          });
+        });
+        if (cambio && lang === 'en') {
+          applyStatic();
+          document.dispatchEvent(new CustomEvent(EVENT_NAME, { detail: { lang: lang } }));
+        }
+      })
+      .catch(function () { /* sin conexión: se usan las traducciones que ya trae el diccionario */ });
+  }
+
   document.addEventListener('DOMContentLoaded', function () {
     titleEs = document.title;
     document.querySelectorAll('[data-lang]').forEach(function (btn) {
@@ -317,18 +364,6 @@
       setLanguage('es', false);
       showOverlay();
     }
-  });
-  // Traducciones de los servicios agregados desde el panel de administración
-  document.addEventListener('DOMContentLoaded', function () {
-    fetch((window.BSC_API || '') + '/api/citas/traducciones')
-      .then(function (r) { return r.ok ? r.json() : {}; })
-      .then(function (extra) {
-        var n = 0;
-        Object.keys(extra || {}).forEach(function (k) {
-          if (typeof extra[k] === 'string' && extra[k]) { DICT[norm(k)] = extra[k]; n++; }
-        });
-        if (n && lang === 'en') setLanguage('en', true);
-      })
-      .catch(function () {});
+    cargarTraduccionesServicios();
   });
 })();

@@ -21,7 +21,8 @@
       noDisponible: 'Los avisos en el dispositivo aún no están disponibles.',
       iphone: 'En iPhone: toca Compartir y elige "Añadir a pantalla de inicio" para recibir avisos.',
       ahora: 'ahora', min: 'hace {n} min', h: 'hace {n} h', d: 'hace {n} d',
-      error: 'No se pudo completar la acción. Intenta de nuevo.', aria: 'Notificaciones'
+      error: 'No se pudo completar la acción. Intenta de nuevo.', aria: 'Notificaciones',
+      avisoPush: '¿Quieres recibir avisos de tus citas en este dispositivo?', activarCorto: 'Activar', ahoraNo: 'Ahora no'
     },
     en: {
       titulo: 'Notifications', vacio: 'You have no notifications.', leerTodas: 'Mark all as read',
@@ -31,7 +32,8 @@
       noDisponible: 'Device alerts are not available yet.',
       iphone: 'On iPhone: tap Share and choose "Add to Home Screen" to receive alerts.',
       ahora: 'now', min: '{n} min ago', h: '{n} h ago', d: '{n} d ago',
-      error: 'The action could not be completed. Please try again.', aria: 'Notifications'
+      error: 'The action could not be completed. Please try again.', aria: 'Notifications',
+      avisoPush: 'Would you like to get alerts about your appointments on this device?', activarCorto: 'Turn on', ahoraNo: 'Not now'
     }
   };
   function lang() { try { return localStorage.getItem('bscLang') === 'en' ? 'en' : 'es'; } catch (e) { return 'es'; } }
@@ -69,7 +71,14 @@
     '.bscn-hora{font-size:12px;color:#b9b0b0;margin-top:4px}',
     '.bscn-vacio{padding:26px 14px;text-align:center;color:#cfcfcf;font-size:14px}',
     '.bscn-pie{padding:10px 14px;border-top:1px solid rgba(216,180,160,.25);font-size:12px;color:#cfcfcf;display:grid;gap:6px}',
-    '.bscn-pie[hidden]{display:none}'
+    '.bscn-pie[hidden]{display:none}',
+    '.bscn-aviso{position:fixed;width:min(320px,calc(100vw - 24px));background:#2d2828;color:#fff;border:1px solid rgba(216,180,160,.5);border-radius:14px;box-shadow:0 12px 32px rgba(0,0,0,.5);padding:14px;z-index:1550;font-family:Poppins,Arial,sans-serif;font-size:14px;line-height:1.5}',
+    '.bscn-aviso.flotante{right:16px;bottom:74px}',
+    '.bscn-aviso.inline{right:16px;top:64px}',
+    '.bscn-aviso .bscn-fila{display:flex;gap:8px;margin-top:10px;justify-content:flex-end}',
+    '.bscn-aviso button{font:500 13px Poppins,Arial,sans-serif;padding:7px 14px;border-radius:18px;cursor:pointer;border:1px solid rgba(216,180,160,.5);background:transparent;color:#fff}',
+    '.bscn-aviso button.si{background:#D8B4A0;border-color:#D8B4A0}',
+    '@media (max-width:480px){.bscn-aviso{left:12px;right:12px;width:auto}}'
   ].join('');
   var estilo = document.createElement('style');
   estilo.textContent = css;
@@ -137,6 +146,7 @@
       noLeidas = r.data.no_leidas || 0;
       host.hidden = false;
       pintar();
+      ofrecerPush();
     }).catch(function () { /* sin conexión: se reintenta en el próximo ciclo */ });
   }
 
@@ -242,6 +252,38 @@
       });
     }).catch(function () { pie.hidden = true; });
   }
+  // Aviso amable para activar las notificaciones del dispositivo. Los navegadores no permiten pedir el permiso
+  // "a ciegas" al entrar: hace falta un clic, por eso se muestra este cuadro con el botón Activar.
+  var ofrecido = false;
+  function ofrecerPush() {
+    if (ofrecido || !soportaPush()) return;
+    ofrecido = true;
+    if (Notification.permission !== 'default') return;
+    try { var no = parseInt(localStorage.getItem('bscPushNo') || '0', 10); if (no && Date.now() - no < 7 * 86400000) return; } catch (e) {}
+    api('/push/clave').then(function (r) {
+      if (!(r.ok && r.data.clave)) return;
+      pushDisponible = true;
+      return suscripcionActual().then(function (sub) { if (!sub) mostrarAviso(); });
+    }).catch(function () {});
+  }
+  function mostrarAviso() {
+    if (document.querySelector('.bscn-aviso')) return;
+    var a = document.createElement('div');
+    a.className = 'bscn-aviso ' + (host.classList.contains('bscn-flotante') ? 'flotante' : 'inline');
+    a.setAttribute('role', 'dialog');
+    var p = document.createElement('div'); p.textContent = t('avisoPush');
+    var fila = document.createElement('div'); fila.className = 'bscn-fila';
+    var no = document.createElement('button'); no.type = 'button'; no.textContent = t('ahoraNo');
+    var si = document.createElement('button'); si.type = 'button'; si.className = 'si'; si.textContent = t('activarCorto');
+    no.addEventListener('click', function () { try { localStorage.setItem('bscPushNo', String(Date.now())); } catch (e) {} a.remove(); });
+    si.addEventListener('click', function () {
+      si.disabled = true;
+      activarPush().then(function () { a.remove(); pintarPie(); }, function () { a.remove(); });
+    });
+    fila.appendChild(no); fila.appendChild(si); a.appendChild(p); a.appendChild(fila);
+    document.body.appendChild(a);
+  }
+
   function boton(texto, fn) {
     var b = document.createElement('button');
     b.type = 'button'; b.className = 'bscn-link'; b.textContent = texto;
