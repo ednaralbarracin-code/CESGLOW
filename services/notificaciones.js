@@ -138,7 +138,12 @@ const PLANTILLAS = () => ({
   clienteNueva: env('WA_TPL_CLIENTE_NUEVA', 'cita_registrada_cliente'),
   clienteRecordatorio: env('WA_TPL_CLIENTE_RECORDATORIO', 'recordatorio_cita_cliente'),
   adminNueva: env('WA_TPL_ADMIN_NUEVA', 'nueva_cita_admin'),
-  adminRecordatorio: env('WA_TPL_ADMIN_RECORDATORIO', 'recordatorio_cita_admin')
+  adminRecordatorio: env('WA_TPL_ADMIN_RECORDATORIO', 'recordatorio_cita_admin'),
+  clienteConfirmada: env('WA_TPL_CLIENTE_CONFIRMADA', 'cita_confirmada_cliente'),
+  clienteCancelada: env('WA_TPL_CLIENTE_CANCELADA', 'cita_cancelada_cliente'),
+  clienteReprogramada: env('WA_TPL_CLIENTE_REPROGRAMADA', 'cita_reprogramada_cliente'),
+  adminCancelada: env('WA_TPL_ADMIN_CANCELADA', 'cita_cancelada_admin'),
+  adminReprogramada: env('WA_TPL_ADMIN_REPROGRAMADA', 'cita_reprogramada_admin')
 });
 
 // ───────────────── Entrega por todos los canales ─────────────────
@@ -364,6 +369,100 @@ async function recordatorioCita(u, filas) {
   await Promise.allSettled([entregaCliente, ...entregasAdmin]);
 }
 
+// ───────────────── Evento 3: la cita cambia (confirmada, cancelada o reprogramada) ─────────────────
+// evento: 'confirmada' | 'cancelada' | 'reprogramada'
+// d: { id_usuario, servicios, fecha, hora, citaIds, por: 'admin' | 'cliente',
+//      abonoPagado (la cita estaba confirmada), horasAntes (al cancelar el cliente), fechaAnterior, horaAnterior (al reprogramar) }
+async function notificarCambioCita(evento, d) {
+  const u = db.prepare('SELECT id_usuario, nombre, apellido, email, telefono FROM usuarios WHERE id_usuario = ?').get(d.id_usuario);
+  if (!u || !d.servicios || !d.servicios.length) return;
+  const nombre = nombreDe(u), lista_ = textoServicios(d.servicios), h = hora12(d.hora);
+  const fEs = fechaLarga(d.fecha, 'es'), fEn = fechaLarga(d.fecha, 'en');
+  const idCita = (d.citaIds || [])[0];
+  const pl = PLANTILLAS();
+  const datosEs = `<strong>Servicio:</strong> ${esc(lista_)}<br><strong>Fecha:</strong> ${esc(fEs)}<br><strong>Hora:</strong> ${esc(h)}`;
+  const datosEn = `<strong>Service:</strong> ${esc(lista_)}<br><strong>Date:</strong> ${esc(fEn)}<br><strong>Time:</strong> ${esc(h)}`;
+  const boton = (es, en) => ({
+    es: { texto: 'Escribir por WhatsApp', url: enlaceWhatsAppNegocio(es) },
+    en: { texto: 'Message us on WhatsApp', url: enlaceWhatsAppNegocio(en) }
+  });
+  const perdioAbono = d.horasAntes != null && d.horasAntes < 24;
+  let cli, adm = null;
+
+  if (evento === 'confirmada') {
+    cli = {
+      tipo: 'cita_confirmada', plantilla: pl.clienteConfirmada, params: [u.nombre, fEs, h, lista_],
+      tEs: 'Cita confirmada', tEn: 'Appointment confirmed',
+      mEs: `Tu cita de ${lista_} del ${fEs} a las ${h} está confirmada. ¡Recibimos tu abono, te esperamos!`,
+      mEn: `Your appointment for ${lista_} on ${fEn} at ${h} is confirmed. We received your deposit, see you soon!`,
+      lEs: [`Hola ${esc(u.nombre)}, ¡tu cita está confirmada!`, datosEs, 'Recibimos tu abono de <strong>$50</strong>. ¡Te esperamos!', 'Recuerda: cancelar con menos de 24 horas de anticipación implica perder el abono.'],
+      lEn: [`Hi ${esc(u.nombre)}, your appointment is confirmed!`, datosEn, 'We received your <strong>$50</strong> deposit. See you soon!', 'Please note: cancelling with less than 24 hours notice means losing the deposit.']
+    };
+  } else if (evento === 'cancelada') {
+    const porCliente = d.por === 'cliente';
+    const dineroEs = !d.abonoPagado ? '' : (porCliente
+      ? (perdioAbono ? ' Según nuestros términos y condiciones, al cancelar con menos de 24 horas de anticipación se pierde el abono de $50.' : ' Para solicitar el reembolso de tu abono, escríbenos por WhatsApp.')
+      : ' Si tienes dudas sobre tu abono, escríbenos por WhatsApp.');
+    const dineroEn = !d.abonoPagado ? '' : (porCliente
+      ? (perdioAbono ? ' According to our terms and conditions, cancelling with less than 24 hours notice means losing the $50 deposit.' : ' To request a refund of your deposit, message us on WhatsApp.')
+      : ' If you have questions about your deposit, message us on WhatsApp.');
+    cli = {
+      tipo: 'cita_cancelada', plantilla: pl.clienteCancelada, params: [u.nombre, fEs, h, lista_],
+      tEs: 'Cita cancelada', tEn: 'Appointment cancelled',
+      mEs: (porCliente ? `Cancelaste tu cita de ${lista_} del ${fEs} a las ${h}.` : `Tu cita de ${lista_} del ${fEs} a las ${h} fue cancelada.`) + dineroEs,
+      mEn: (porCliente ? `You cancelled your appointment for ${lista_} on ${fEn} at ${h}.` : `Your appointment for ${lista_} on ${fEn} at ${h} was cancelled.`) + dineroEn,
+      lEs: [`Hola ${esc(u.nombre)}, ${porCliente ? 'cancelaste' : 'se canceló'} esta cita:`, datosEs].concat(dineroEs ? [esc(dineroEs.trim())] : []),
+      lEn: [`Hi ${esc(u.nombre)}, ${porCliente ? 'you cancelled' : 'we cancelled'} this appointment:`, datosEn].concat(dineroEn ? [esc(dineroEn.trim())] : []),
+      boton: dineroEs ? boton(`Hola, cancelé mi cita en CESGLOW (${lista_}, ${d.fecha} ${h}). Quiero hablar sobre mi abono.`, `Hi, I cancelled my CESGLOW appointment (${lista_}, ${d.fecha} ${h}). I'd like to talk about my deposit.`) : null
+    };
+    if (porCliente) {
+      const nota = !d.abonoPagado ? 'Aún no tenía abono confirmado.' : (perdioAbono ? 'Canceló con menos de 24 horas: pierde el abono de $50.' : 'Canceló con 24 horas o más: puede pedir el reembolso del abono.');
+      adm = {
+        tipo: 'cita_cancelada_admin', plantilla: pl.adminCancelada, params: [nombre, fEs, h, lista_],
+        titulo: `Cita cancelada: ${nombre}`, mensaje: `${lista_} · ${fEs}, ${h}. ${nota}`,
+        lineas: [`<strong>${esc(nombre)}</strong> canceló su cita:`, datosEs + `<br><strong>Teléfono:</strong> ${esc(u.telefono || '—')}`, esc(nota)]
+      };
+    }
+  } else if (evento === 'reprogramada') {
+    const fAntesEs = fechaLarga(d.fechaAnterior, 'es'), fAntesEn = fechaLarga(d.fechaAnterior, 'en'), hAntes = hora12(d.horaAnterior);
+    cli = {
+      tipo: 'cita_reprogramada', plantilla: pl.clienteReprogramada, params: [u.nombre, fEs, h, lista_],
+      tEs: 'Cita reprogramada', tEn: 'Appointment rescheduled',
+      mEs: `Tu cita de ${lista_} se reprogramó para el ${fEs} a las ${h} (antes: ${fAntesEs}, ${hAntes}).`,
+      mEn: `Your appointment for ${lista_} was rescheduled to ${fEn} at ${h} (before: ${fAntesEn}, ${hAntes}).`,
+      lEs: [`Hola ${esc(u.nombre)}, tu cita se reprogramó:`, datosEs, `Antes era: ${esc(fAntesEs)}, ${esc(hAntes)}.`],
+      lEn: [`Hi ${esc(u.nombre)}, your appointment was rescheduled:`, datosEn, `It used to be: ${esc(fAntesEn)}, ${esc(hAntes)}.`]
+    };
+    if (d.por === 'cliente') {
+      adm = {
+        tipo: 'cita_reprogramada_admin', plantilla: pl.adminReprogramada, params: [nombre, fEs, h, lista_],
+        titulo: `Cita reprogramada: ${nombre}`, mensaje: `${lista_} · ahora ${fEs}, ${h} (antes ${fAntesEs}, ${hAntes})`,
+        lineas: [`<strong>${esc(nombre)}</strong> reprogramó su cita:`, datosEs + `<br><strong>Teléfono:</strong> ${esc(u.telefono || '—')}`, `Antes era: ${esc(fAntesEs)}, ${esc(hAntes)}.`]
+      };
+    }
+  } else { return; }
+
+  const tag = `${cli.tipo}-${idCita}`;
+  const tEs = { titulo: cli.tEs, lineas: cli.lEs, boton: cli.boton ? cli.boton.es : null };
+  const tEn = { titulo: cli.tEn, lineas: cli.lEn, boton: cli.boton ? cli.boton.en : null };
+  const entregas = [entregar({ id_usuario: u.id_usuario, email: u.email, telefono: u.telefono }, {
+    tipo: cli.tipo, id_cita: idCita, titulo: cli.tEs, mensaje: cli.mEs, titulo_en: cli.tEn, mensaje_en: cli.mEn,
+    correo: { asunto: `${cli.tEs} / ${cli.tEn} – CESGLOW`, html: correoHTML(tEs, tEn), texto: correoTexto(tEs, tEn) },
+    push: { titulo: `${cli.tEs} / ${cli.tEn}`, mensaje: cli.mEs, url: '/', tag },
+    whatsapp: { plantilla: cli.plantilla, parametros: cli.params }
+  })];
+  if (adm) {
+    const aEs = { titulo: adm.titulo, lineas: adm.lineas, boton: { texto: 'Abrir el panel', url: SITIO() + '/admin.html' } };
+    destinosAdmin().forEach(dest => entregas.push(entregar(dest, {
+      tipo: adm.tipo, id_cita: idCita, titulo: adm.titulo, mensaje: adm.mensaje,
+      correo: { asunto: adm.titulo, html: correoHTML(aEs), texto: correoTexto(aEs) },
+      push: { titulo: adm.titulo, mensaje: adm.mensaje, url: '/admin.html', tag: tag + '-admin' },
+      whatsapp: { plantilla: adm.plantilla, parametros: adm.params }
+    })));
+  }
+  await Promise.allSettled(entregas);
+}
+
 // Revisión periódica (cada 10 minutos) + limpieza de avisos viejos
 let temporizador = null;
 function iniciarRecordatorios() {
@@ -380,7 +479,7 @@ function iniciarRecordatorios() {
 }
 
 module.exports = {
-  notificarCitaAgendada, revisarRecordatorios, iniciarRecordatorios,
+  notificarCitaAgendada, notificarCambioCita, revisarRecordatorios, iniciarRecordatorios, zonaNegocio: TZ,
   // se exportan para pruebas y para la ruta de suscripción push
   pushActivo, normalizarTelefono, aLocalISO
 };
