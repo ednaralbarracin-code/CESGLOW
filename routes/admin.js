@@ -267,3 +267,27 @@ router.delete('/bloqueos/:id', (req, res) => {
 });
 
 module.exports = router;
+// Agregar nuevo servicio con nombres bilingües
+router.post('/servicios', (req, res) => {
+  const { nombre_es, nombre_en, descripcion_es, descripcion_en, precio, duracion, categoria, imagen, activo } = req.body;
+
+  if (!nombre_es || !nombre_en) {
+    return res.status(400).json({ error: 'El nombre es obligatorio en Español e Inglés.' });
+  }
+
+  const query = `
+    INSERT INTO servicios (nombre, nombre_es, nombre_en, descripcion, descripcion_es, descripcion_en, precio, duracion, categoria, imagen, activo)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `;
+
+  db.run(query, [
+    nombre_es, nombre_es, nombre_en,
+    descripcion_es || '', descripcion_es || '', descripcion_en || '',
+    Number(precio) || 0, Number(duracion) || 60,
+    categoria || 'facial', imagen || '/images/serv_fac1.jpg',
+    activo !== undefined ? (activo ? 1 : 0) : 1
+  ], function(err) {
+    if (err) return res.status(500).json({ error: 'Error al insertar servicio' });
+    res.status(201).json({ success: true, servicioId: this.lastID });
+  });
+});
