@@ -8,7 +8,7 @@
   if (window.__bscNotificaciones) return;
   window.__bscNotificaciones = true;
 
-  var BACKEND_URL = 'https://bsc-beauty-skin-care-production.up.railway.app';
+  var BACKEND_URL = 'https://cesglow-production.up.railway.app';
   var TOKEN_KEY = 'beautyToken';
   var POLL_MS = 60000;
 

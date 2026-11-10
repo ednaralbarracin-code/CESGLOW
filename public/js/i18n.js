@@ -329,7 +329,7 @@
   /* Servicios creados o editados desde el panel de administración: su nombre, descripción y categoría en inglés
      vienen del servidor. Se agregan al diccionario para que t() y la traducción de la página los reconozcan
      igual que a los demás textos (si un servicio no tiene inglés, se sigue viendo en español). */
-  var BACKEND_URL = 'https://bsc-beauty-skin-care-production.up.railway.app';
+  var BACKEND_URL = 'https://cesglow-production.up.railway.app';
   function cargarTraduccionesServicios() {
     if (!window.fetch) return;
     fetch(BACKEND_URL + '/api/citas/servicios')

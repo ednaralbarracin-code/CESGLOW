@@ -6,7 +6,7 @@
  */
 (function () {
   'use strict';
-  var BACKEND_URL = 'https://bsc-beauty-skin-care-production.up.railway.app';
+  var BACKEND_URL = 'https://cesglow-production.up.railway.app';
   var TOKEN_KEY = 'beautyToken';
   var lista = document.getElementById('listaCitas');
   if (!lista) return;

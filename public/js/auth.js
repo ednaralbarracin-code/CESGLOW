@@ -5,7 +5,7 @@ let bookingView = null;      // 'login' | 'form' | 'done' (para re-dibujar al ca
 let refreshCalendar = null;
 let resenasCache = null;
 
-const BACKEND_URL = 'https://bsc-beauty-skin-care-production.up.railway.app';
+const BACKEND_URL = 'https://cesglow-production.up.railway.app';
 
 const loginModal = document.getElementById('loginModal');
 const loginOverlay = document.getElementById('loginOverlay');
